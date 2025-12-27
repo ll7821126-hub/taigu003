@@ -65,16 +65,41 @@ app.post('/api/prices', (req, res) => {
 });
 
 // 🟢 [新增] 數據同步接口 (解決前端 404 錯誤)
+// 🟢 [修改] 數據同步接口 (真正寫入資料庫版)
 app.post('/api/sync_data', async (req, res) => {
     try {
-        const { userId, clientName, holdings } = req.body;
-        console.log(`收到同步請求: ${clientName}, 筆數: ${holdings ? holdings.length : 0}`);
+        const { clientName, holdings } = req.body;
+        console.log(`📥 收到同步請求: ${clientName}, 筆數: ${holdings ? holdings.length : 0}`);
         
-        // 目前先回傳成功，防止報錯
-        // 未來可以在這裡寫入資料庫邏輯
-        res.json({ success: true, message: "同步成功" });
+        if (!holdings || !Array.isArray(holdings)) {
+            return res.json({ success: true, message: "無數據需要同步" });
+        }
+
+        // 1. 先刪除該客戶舊的資料 (避免重複堆疊)
+        // 只要是這個客戶名字的資料，先清空，再寫入新的
+        await Stock.deleteMany({ client: clientName });
+
+        // 2. 準備要寫入的新資料格式
+        const newStocks = holdings.map(item => ({
+            client: clientName,
+            name: item.name,
+            code: item.code,
+            shares: Number(item.shares),    // 確保轉為數字
+            price: Number(item.price),      // 確保轉為數字
+            stopLoss: Number(item.stopLoss),// 確保轉為數字
+            date: new Date()
+        }));
+
+        // 3. 寫入資料庫
+        if (newStocks.length > 0) {
+            await Stock.insertMany(newStocks);
+        }
+
+        console.log(`✅ 已成功儲存 ${newStocks.length} 筆資料到資料庫`);
+        res.json({ success: true, message: "同步並儲存成功" });
+
     } catch (err) {
-        console.error("同步失敗:", err);
+        console.error("❌ 同步失敗:", err);
         res.status(500).json({ success: false, message: err.message });
     }
 });
