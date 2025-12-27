@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const yahooFinance = require('yahoo-finance2').default;
-const bcrypt = require('bcryptjs');
 const path = require('path');
 
 const app = express();
@@ -14,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// ---------------------- 靜態檔案 (admin.html) -----------
+// ---------------------- 靜態檔案 ------------------------
 // 讓 /public 裡面的檔案可以直接被訪問，例如 /admin.html
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -26,9 +25,7 @@ mongoose
   .then(() => console.log('✅ MongoDB 連接成功'))
   .catch((err) => console.error('❌ MongoDB 連接失敗:', err));
 
-/**
- * 資料結構：對齊前端 holdings
- */
+// ---------------------- 資料 Schema ---------------------
 const holdingSchema = new mongoose.Schema({
   userId: String,
   client: String,
@@ -46,22 +43,17 @@ const holdingSchema = new mongoose.Schema({
 const Holding = mongoose.model('Holding', holdingSchema);
 
 // ======================================================
-// 0. Admin 安全登入（使用環境變數 + 雜湊密碼）
-//    POST /api/admin/login
+// 0. Admin 登入（寫死帳號密碼） POST /api/admin/login
 // ======================================================
-i// 管理員登入（寫死帳號密碼）
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body || {};
 
-  // 這裡填你要固定的帳號密碼
-  const FIXED_USER = 'admin';        
-  const FIXED_PASS = 'Qq112233.';       
+  // 👉 固定帳號密碼（和 admin.html 保持一致）
+  const FIXED_USER = 'admin';
+  const FIXED_PASS = 'Qq112233.';
 
-  // 檢查帳號密碼
   if (username === FIXED_USER && password === FIXED_PASS) {
-    // 給一個簡單 token
     const token = 'admin-fixed-token';
-
     return res.json({
       success: true,
       token,
@@ -75,32 +67,6 @@ app.post('/api/admin/login', async (req, res) => {
   }
 });
 
-
-    // 1. 比對帳號
-    if (username !== ADMIN_USER) {
-      return res.json({ success: false, message: '帳號或密碼錯誤' });
-    }
-
-    // 2. 比對密碼（明碼 vs 雜湊）
-    const ok = await bcrypt.compare(password || '', ADMIN_PASS_HASH);
-    if (!ok) {
-      return res.json({ success: false, message: '帳號或密碼錯誤' });
-    }
-
-    // 3. 通過：發一個簡單 token
-    const token = `admin-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
-    return res.json({
-      success: true,
-      token,
-      message: '登入成功'
-    });
-  } catch (err) {
-    console.error('❌ /api/admin/login 錯誤:', err);
-    return res.status(500).json({ success: false, message: '登入失敗' });
-  }
-});
-
 // ======================================================
 // 共用：向 Yahoo 抓即時價格
 // ======================================================
@@ -111,6 +77,7 @@ async function getRealStockPrice(code) {
   try {
     let symbol = code.trim();
 
+    // 如果是純數字，就當作台股，加上 .TW
     if (/^\d+$/.test(symbol)) {
       symbol = symbol + '.TW';
     }
@@ -140,119 +107,61 @@ async function getRealStockPrice(code) {
 app.get('/api/get_data', async (req, res) => {
   try {
     const { userId } = req.query;
-    if (!userId) {
-      return res.json({ holdings: [] });
-    }
 
-    const holdings = await Holding.find({ userId }).lean();
-    return res.json({ holdings });
-  } catch (error) {
-    console.error('❌ get_data 錯誤:', error);
-    res.status(500).json({ holdings: [], error: 'get_data error' });
+    const query = userId ? { userId } : {};
+    const holdings = await Holding.find(query).sort({ createdAt: -1 });
+
+    return res.json(holdings);
+  } catch (err) {
+    console.error('❌ /api/get_data 錯誤:', err);
+    return res.status(500).json({ error: '伺服器錯誤' });
   }
 });
 
 // ======================================================
-// 2. 刷新行情 POST /api/prices
+// 2. 儲存持倉 POST /api/save_data
 // ======================================================
-app.post('/api/prices', async (req, res) => {
+app.post('/api/save_data', async (req, res) => {
   try {
-    const { codes } = req.body;
-
-    if (!Array.isArray(codes) || !codes.length) {
-      return res.json({});
-    }
-
-    const prices = {};
-
-    for (const code of codes) {
-      const latestPrice = await getRealStockPrice(code);
-      if (typeof latestPrice === 'number') {
-        prices[code] = latestPrice;
-      }
-    }
-
-    console.log('📦 刷新成功，回傳價格物件:', prices);
-    return res.json(prices);
-  } catch (error) {
-    console.error('❌ /api/prices 錯誤:', error);
-    res.status(500).json({ message: '更新行情失敗' });
-  }
-});
-
-// ======================================================
-// 3. 同步持倉 POST /api/sync_data
-// ======================================================
-app.post('/api/sync_data', async (req, res) => {
-  try {
-    const { userId, clientName, holdings } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ success: false, message: '缺少 userId' });
-    }
-
-    if (!Array.isArray(holdings)) {
-      return res.json({ success: true, message: '無數據' });
-    }
-
-    await Holding.deleteMany({ userId });
-
-    const docs = holdings.map((h) => ({
+    const {
       userId,
-      client: h.client,
-      stockName: h.stockName,
-      code: h.code,
-      quantity: Number(h.quantity) || 0,
-      cost: Number(h.cost) || 0,
-      currentPrice:
-        typeof h.currentPrice === 'number'
-          ? h.currentPrice
-          : Number(h.cost) || 0,
-      stopLoss: Number(h.stopLoss) || 0,
-      takeProfit: Number(h.takeProfit) || 0,
-      recommendType: h.recommendType || 'no'
-    }));
+      client,
+      stockName,
+      code,
+      quantity,
+      cost,
+      stopLoss,
+      takeProfit,
+      recommendType
+    } = req.body || {};
 
-    if (docs.length > 0) {
-      await Holding.insertMany(docs);
-    }
+    const holding = new Holding({
+      userId,
+      client,
+      stockName,
+      code,
+      quantity,
+      cost,
+      stopLoss,
+      takeProfit,
+      recommendType
+    });
 
-    console.log(
-      `☁️ 同步成功，userId=${userId}，client=${clientName}，筆數=${docs.length}`
-    );
-    res.json({ success: true, message: '同步成功' });
+    await holding.save();
+
+    return res.json({ success: true, message: '儲存成功' });
   } catch (err) {
-    console.error('❌ /api/sync_data 錯誤:', err);
-    res.status(500).json({ success: false, message: err.message });
+    console.error('❌ /api/save_data 錯誤:', err);
+    return res.status(500).json({ success: false, message: '儲存失敗' });
   }
 });
 
-// ======================================================
-// 4. 管理端：取得所有持倉 GET /api/stocks
-// ======================================================
-app.get('/api/stocks', async (req, res) => {
-  try {
-    const list = await Holding.find().lean();
-    res.json(list);
-  } catch (err) {
-    console.error('❌ /api/stocks 錯誤:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
+// 你其他的 API（例如更新價格、刪除、等等）可以繼續往下加
+// ...
 
 // ======================================================
-// 5. 管理端：刪除單筆持倉 DELETE /api/stocks/:id
+// 啟動伺服器
 // ======================================================
-app.delete('/api/stocks/:id', async (req, res) => {
-  try {
-    await Holding.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('❌ 刪除錯誤:', err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
