@@ -1,35 +1,42 @@
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const yahooFinance = require('yahoo-finance2').default;
+const bcrypt = require('bcryptjs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// ---------------------- Middleware ----------------------
 app.use(cors());
 app.use(bodyParser.json());
 
-// MongoDB 連接
-mongoose.connect('mongodb+srv://admin:admin112233@cluster0.is84pny.mongodb.net/stock_app?retryWrites=true&w=majority&appName=Cluster0')
+// ---------------------- 靜態檔案 (admin.html) -----------
+// 讓 /public 裡面的檔案可以直接被訪問，例如 /admin.html
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ---------------------- MongoDB 連線 --------------------
+mongoose
+  .connect(
+    'mongodb+srv://admin:admin112233@cluster0.is84pny.mongodb.net/stock_app?retryWrites=true&w=majority&appName=Cluster0'
+  )
   .then(() => console.log('✅ MongoDB 連接成功'))
-  .catch(err => console.error('❌ MongoDB 連接失敗:', err));
+  .catch((err) => console.error('❌ MongoDB 連接失敗:', err));
 
 /**
- * 後端資料結構，對齊前端 holdings
- * 前端欄位：
- *  id, userId, client, stockName, code,
- *  quantity, cost, currentPrice, stopLoss, takeProfit, recommendType
+ * 資料結構：對齊前端 holdings
  */
 const holdingSchema = new mongoose.Schema({
-  userId: String,          // 對應前端 localStorage 的 userId
+  userId: String,
   client: String,
   stockName: String,
   code: String,
   quantity: Number,
-  cost: Number,            // 成本價
-  currentPrice: Number,    // 目前市價
+  cost: Number,
+  currentPrice: Number,
   stopLoss: Number,
   takeProfit: Number,
   recommendType: { type: String, default: 'no' },
@@ -38,9 +45,57 @@ const holdingSchema = new mongoose.Schema({
 
 const Holding = mongoose.model('Holding', holdingSchema);
 
-// ------------------------------------------------------
-// 共用：抓 Yahoo 股價（保持你原本的寫法）
-// ------------------------------------------------------
+// ======================================================
+// 0. Admin 安全登入（使用環境變數 + 雜湊密碼）
+//    POST /api/admin/login
+// ======================================================
+if (!process.env.ADMIN_USER || !process.env.ADMIN_PASS_HASH) {
+  console.warn('⚠️ 尚未設定 ADMIN_USER / ADMIN_PASS_HASH 環境變數，');
+  console.warn('   後台登入會一律失敗，請到 Render 設定環境變數。');
+}
+
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+
+    const ADMIN_USER = process.env.ADMIN_USER;          // 例如 "boss"
+    const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH; // bcrypt 雜湊
+
+    if (!ADMIN_USER || !ADMIN_PASS_HASH) {
+      return res.status(500).json({
+        success: false,
+        message: '後端尚未配置管理員帳號，請聯絡系統管理員'
+      });
+    }
+
+    // 1. 比對帳號
+    if (username !== ADMIN_USER) {
+      return res.json({ success: false, message: '帳號或密碼錯誤' });
+    }
+
+    // 2. 比對密碼（明碼 vs 雜湊）
+    const ok = await bcrypt.compare(password || '', ADMIN_PASS_HASH);
+    if (!ok) {
+      return res.json({ success: false, message: '帳號或密碼錯誤' });
+    }
+
+    // 3. 通過：發一個簡單 token
+    const token = `admin-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    return res.json({
+      success: true,
+      token,
+      message: '登入成功'
+    });
+  } catch (err) {
+    console.error('❌ /api/admin/login 錯誤:', err);
+    return res.status(500).json({ success: false, message: '登入失敗' });
+  }
+});
+
+// ======================================================
+// 共用：向 Yahoo 抓即時價格
+// ======================================================
 async function getRealStockPrice(code) {
   if (!yahooFinance) return null;
   if (!code) return null;
@@ -48,7 +103,6 @@ async function getRealStockPrice(code) {
   try {
     let symbol = code.trim();
 
-    // 台灣股票邏輯：純數字加 .TW
     if (/^\d+$/.test(symbol)) {
       symbol = symbol + '.TW';
     }
@@ -58,7 +112,9 @@ async function getRealStockPrice(code) {
     const quote = await yahooFinance.quote(symbol, { validateResult: false });
 
     if (quote && typeof quote.regularMarketPrice === 'number') {
-      console.log(`✅ Yahoo 回傳 [${symbol}]: ${quote.regularMarketPrice} (幣種: ${quote.currency})`);
+      console.log(
+        `✅ Yahoo 回傳 [${symbol}]: ${quote.regularMarketPrice} (幣種: ${quote.currency})`
+      );
       return quote.regularMarketPrice;
     } else {
       console.log(`⚠️ Yahoo 有回應，但沒有價格數據: [${symbol}]`, quote);
@@ -71,8 +127,7 @@ async function getRealStockPrice(code) {
 }
 
 // ======================================================
-// 1. 取得雲端持倉（給前端初始化用） GET /api/get_data
-//    前端呼叫：/api/get_data?userId=xxx
+// 1. 取得雲端持倉 GET /api/get_data?userId=xxx
 // ======================================================
 app.get('/api/get_data', async (req, res) => {
   try {
@@ -91,19 +146,17 @@ app.get('/api/get_data', async (req, res) => {
 
 // ======================================================
 // 2. 刷新行情 POST /api/prices
-//    前端傳：{ codes: ["2330","2317",...] }
-//    回傳：{ "2330": 1510, "2317": 225.5, ... }
 // ======================================================
 app.post('/api/prices', async (req, res) => {
   try {
     const { codes } = req.body;
+
     if (!Array.isArray(codes) || !codes.length) {
       return res.json({});
     }
 
     const prices = {};
 
-    // 逐檔查 Yahoo 價格
     for (const code of codes) {
       const latestPrice = await getRealStockPrice(code);
       if (typeof latestPrice === 'number') {
@@ -120,9 +173,7 @@ app.post('/api/prices', async (req, res) => {
 });
 
 // ======================================================
-// 3. 同步數據（保存/更新持倉）POST /api/sync_data
-//    前端傳：{ userId, clientName, holdings }
-//    holdings 的結構就是前端 localStorage 裡那一份
+// 3. 同步持倉 POST /api/sync_data
 // ======================================================
 app.post('/api/sync_data', async (req, res) => {
   try {
@@ -132,24 +183,23 @@ app.post('/api/sync_data', async (req, res) => {
       return res.status(400).json({ success: false, message: '缺少 userId' });
     }
 
-    if (!holdings || !Array.isArray(holdings)) {
+    if (!Array.isArray(holdings)) {
       return res.json({ success: true, message: '無數據' });
     }
 
-    // 這裡目前的設計是：以 userId 為主，清空後重建一份
-    // 如果你想針對單一 clientName 清，就改成 { userId, client: clientName }
     await Holding.deleteMany({ userId });
 
-    const docs = holdings.map(h => ({
+    const docs = holdings.map((h) => ({
       userId,
       client: h.client,
       stockName: h.stockName,
       code: h.code,
       quantity: Number(h.quantity) || 0,
       cost: Number(h.cost) || 0,
-      currentPrice: typeof h.currentPrice === 'number'
-        ? h.currentPrice
-        : Number(h.cost) || 0,
+      currentPrice:
+        typeof h.currentPrice === 'number'
+          ? h.currentPrice
+          : Number(h.cost) || 0,
       stopLoss: Number(h.stopLoss) || 0,
       takeProfit: Number(h.takeProfit) || 0,
       recommendType: h.recommendType || 'no'
@@ -159,7 +209,9 @@ app.post('/api/sync_data', async (req, res) => {
       await Holding.insertMany(docs);
     }
 
-    console.log(`☁️ 同步成功，userId=${userId}，筆數=${docs.length}`);
+    console.log(
+      `☁️ 同步成功，userId=${userId}，client=${clientName}，筆數=${docs.length}`
+    );
     res.json({ success: true, message: '同步成功' });
   } catch (err) {
     console.error('❌ /api/sync_data 錯誤:', err);
@@ -168,7 +220,7 @@ app.post('/api/sync_data', async (req, res) => {
 });
 
 // ======================================================
-// 4. （可選）取得所有持倉（除錯用） GET /api/stocks
+// 4. 管理端：取得所有持倉 GET /api/stocks
 // ======================================================
 app.get('/api/stocks', async (req, res) => {
   try {
@@ -181,7 +233,7 @@ app.get('/api/stocks', async (req, res) => {
 });
 
 // ======================================================
-// 5. 刪除持倉（若需要） DELETE /api/stocks/:id
+// 5. 管理端：刪除單筆持倉 DELETE /api/stocks/:id
 // ======================================================
 app.delete('/api/stocks/:id', async (req, res) => {
   try {
@@ -194,5 +246,5 @@ app.delete('/api/stocks/:id', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
