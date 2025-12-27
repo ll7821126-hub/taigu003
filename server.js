@@ -28,26 +28,36 @@ const stockSchema = new mongoose.Schema({
 });
 const Stock = mongoose.model('Stock', stockSchema);
 
-// 獲取真實股價函數
+// 🕵️‍♂️ 偵探版：獲取股價函數 (帶詳細日誌)
 async function getRealStockPrice(code) {
+    if (!yahooFinance) return null;
+    if (!code) return null;
+
     try {
-        let symbol = code;
-        // 如果是純數字 (例如 2330)，預設加上 .TW 變成台股
-        if (/^\d+$/.test(code)) {
-            symbol = code + '.TW';
+        let symbol = code.trim();
+        
+        // 台灣股票邏輯：如果是純數字 (如 2330)，加上 .TW
+        // ⚠️ 注意：如果你玩的是港股，可能需要改成 .HK
+        if (/^\d+$/.test(symbol)) {
+            symbol = symbol + '.TW';
         }
 
-        const quote = await yahooFinance.quote(symbol);
+        console.log(`🔍 正在向 Yahoo 查詢: [${symbol}]`); // 讓我們看看它到底查了什麼代碼
+
+        const quote = await yahooFinance.quote(symbol, { validateResult: false });
+        
         if (quote && typeof quote.regularMarketPrice === 'number') {
+            console.log(`✅ Yahoo 回傳 [${symbol}]: ${quote.regularMarketPrice} (幣種: ${quote.currency})`);
             return quote.regularMarketPrice;
+        } else {
+            console.log(`⚠️ Yahoo 有回應，但沒有價格數據: [${symbol}]`, quote);
+            return null;
         }
-        return null;
     } catch (error) {
-        console.log(`⚠️ 無法獲取 ${code} 的股價:`, error.message);
+        console.log(`❌ 抓取報錯 [${code}]:`, error.message);
         return null;
     }
 }
-
 // ==========================================
 // 👇 新增：專門應對前端 "刷新行情" 的 API
 // ==========================================
