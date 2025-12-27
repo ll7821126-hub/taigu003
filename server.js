@@ -29,49 +29,44 @@ const stockSchema = new mongoose.Schema({
 });
 const Stock = mongoose.model('Stock', stockSchema);
 
-// 👇 2. 這是核心：獲取真實股價的函數
-async function getRealStockPrice(code) {
+// 定義刷新數據的函數
+async function realRefresh() {
     try {
-        // 判斷是否為台股 (如果是純數字，例如 2330，就加上 .TW)
-        let symbol = code;
-        if (/^\d+$/.test(code)) {
-            symbol = code + '.TW';
+        // 👇 關鍵修改：這裡加上了 /api
+        const response = await fetch('https://taigu003.onrender.com/api/stocks'); 
+        
+        if (!response.ok) {
+            throw new Error(`伺服器回應錯誤: ${response.status}`);
         }
 
-        // 從 Yahoo Finance 抓取報價
-        const quote = await yahooFinance.quote(symbol);
+        const data = await response.json();
         
-        if (quote && quote.regularMarketPrice) {
-            return quote.regularMarketPrice; // 返回現價
-        } else {
-            return null; // 抓不到
+        // 如果後端回傳空數據
+        if (!data || data.length === 0) {
+            console.log("目前沒有持倉數據");
+            return;
         }
+
+        // 這裡放你原本渲染畫面的邏輯...
+        // 例如：renderStockList(data); 
+        // 因為我看不到你完整的渲染代碼，所以請確保這裡接上你原本的顯示邏輯
+        console.log("數據刷新成功", data);
+        
+        // 假設你有一個渲染函數叫做 renderTable 或 updateUI
+        if (typeof renderTable === 'function') {
+            renderTable(data);
+        } else {
+            // 如果沒有封裝函數，這裡可能需要重寫你的 DOM 更新邏輯
+            // 但通常只要解決 fetch 的網址，下面的代碼就能跑了
+            location.reload(); // 最簡單的暴力解法：抓到數據後刷新頁面 (可選)
+        }
+
     } catch (error) {
-        console.error(`無法獲取 ${code} 的股價:`, error.message);
-        return null;
+        console.error("刷新失敗:", error);
+        // alert("無法連接後端，請檢查 Render 是否喚醒");
     }
 }
 
-// API: 獲取所有持倉 (並自動更新最新價格)
-app.get('/api/stocks', async (req, res) => {
-    try {
-        const stocks = await Stock.find();
-        
-        // 這裡我們即時去抓最新價格，並更新回傳的數據 (不一定要存回資料庫，只顯示也可以)
-        // 為了效能，我們用 Promise.all 平行抓取
-        const updatedStocks = await Promise.all(stocks.map(async (stock) => {
-            const currentPrice = await getRealStockPrice(stock.code);
-            return {
-                ...stock.toObject(),
-                price: currentPrice || stock.price // 如果抓到了就用新價格，抓不到就用舊的
-            };
-        }));
-
-        res.json(updatedStocks);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
 
 // API: 同步數據 (寫入資料庫)
 app.post('/api/sync_data', async (req, res) => {
