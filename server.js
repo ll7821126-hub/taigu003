@@ -103,6 +103,35 @@ async function getRealStockPrice(code) {
 }
 
 // ======================================================
+// 0.5 取得多檔股票即時價格  POST /api/prices
+// body: { codes: ["2330", "2317.TW", ...] }
+// 回傳: { "2330": 798.0, "2317": 202.5, ... }
+// ======================================================
+app.post('/api/prices', async (req, res) => {
+  try {
+    const { codes } = req.body || {};
+    if (!Array.isArray(codes) || codes.length === 0) {
+      return res.json({});
+    }
+
+    const result = {};
+
+    // 依序查詢，避免一次打太多被 Yahoo 限流
+    for (const raw of codes) {
+      if (!raw) continue;
+      const code = String(raw);
+      const price = await getRealStockPrice(code);
+      result[code] = price; // 可能是 number 或 null
+    }
+
+    return res.json(result);
+  } catch (err) {
+    console.error('❌ /api/prices 錯誤:', err);
+    return res.status(500).json({});
+  }
+});
+
+// ======================================================
 // 1. 取得雲端持倉 GET /api/get_data?userId=xxx
 // ======================================================
 app.get('/api/get_data', async (req, res) => {
