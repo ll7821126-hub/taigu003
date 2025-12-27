@@ -22,7 +22,7 @@ const stockSchema = new mongoose.Schema({
     name: String,
     code: String,
     shares: Number,
-    price: Number,
+    price: Number,     // 這是你的「成本價」
     stopLoss: Number,
     date: { type: Date, default: Date.now }
 });
@@ -37,12 +37,11 @@ async function getRealStockPrice(code) {
         let symbol = code.trim();
         
         // 台灣股票邏輯：如果是純數字 (如 2330)，加上 .TW
-        // ⚠️ 注意：如果你玩的是港股，可能需要改成 .HK
         if (/^\d+$/.test(symbol)) {
             symbol = symbol + '.TW';
         }
 
-        console.log(`🔍 正在向 Yahoo 查詢: [${symbol}]`); // 讓我們看看它到底查了什麼代碼
+        console.log(`🔍 正在向 Yahoo 查詢: [${symbol}]`);
 
         const quote = await yahooFinance.quote(symbol, { validateResult: false });
         
@@ -58,48 +57,58 @@ async function getRealStockPrice(code) {
         return null;
     }
 }
-// ==========================================
-// 👇 新增：專門應對前端 "刷新行情" 的 API
-// ==========================================
-app.post('/api/prices', async (req, res) => {
-    try {
-        // 1. 找出資料庫所有股票
-        const stocks = await Stock.find();
-        
-        // 2. 重新抓取最新價格
-        const updatedStocks = await Promise.all(stocks.map(async (stock) => {
-            const currentPrice = await getRealStockPrice(stock.code);
-            return {
-                ...stock.toObject(),
-                price: currentPrice !== null ? currentPrice : stock.price
-            };
-        }));
 
-        // 3. 回傳給前端
-        res.json(updatedStocks);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
-// API: 獲取所有持倉 (GET)
+// ==========================================
+// 1. 獲取所有持倉 (打開網頁時觸發 - GET)
+// ==========================================
 app.get('/api/stocks', async (req, res) => {
     try {
         const stocks = await Stock.find();
+        
+        // 重新抓取最新價格，但不覆蓋成本
         const updatedStocks = await Promise.all(stocks.map(async (stock) => {
-            const currentPrice = await getRealStockPrice(stock.code);
+            const latestPrice = await getRealStockPrice(stock.code);
             return {
                 ...stock.toObject(),
-                price: currentPrice !== null ? currentPrice : stock.price
+                // ⚠️ 關鍵：保持 price (成本) 不變，將市價放入 currentPrice
+                currentPrice: latestPrice 
             };
         }));
+        
         res.json(updatedStocks);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 
-// API: 同步數據 (POST)
+// ==========================================
+// 2. 刷新行情 (點擊按鈕時觸發 - POST)
+// ==========================================
+app.post('/api/prices', async (req, res) => {
+    try {
+        const stocks = await Stock.find();
+
+        const updatedStocks = await Promise.all(stocks.map(async (stock) => {
+            const latestPrice = await getRealStockPrice(stock.code);
+            return {
+                ...stock.toObject(),
+                // ⚠️ 關鍵：這裡也一樣，用 currentPrice 傳遞市價
+                currentPrice: latestPrice 
+            };
+        }));
+
+        console.log('📦 刷新成功，回傳數據:', updatedStocks);
+        res.json(updatedStocks);
+
+    } catch (error) {
+        console.error('❌ API 錯誤:', error);
+        res.status(500).json({ message: '更新行情失敗' });
+    }
+});
+
+// ==========================================
+// 3. 同步數據 (保存/更新持倉 - POST)
+// ==========================================
 app.post('/api/sync_data', async (req, res) => {
     try {
         const { clientName, holdings } = req.body;
@@ -111,6 +120,8 @@ app.post('/api/sync_data', async (req, res) => {
         await Stock.deleteMany({ client: clientName });
 
         const newStocks = await Promise.all(holdings.map(async (item) => {
+            // 這裡保留你原本的邏輯：保存時嘗試抓取價格，如果抓不到就用前端傳來的價格
+            // 注意：這裡存入資料庫的 price 會被視為「成本價」
             const livePrice = await getRealStockPrice(item.code);
             let finalPrice = livePrice;
             
@@ -122,7 +133,7 @@ app.post('/api/sync_data', async (req, res) => {
                 name: item.name,
                 code: item.code,
                 shares: Number(item.shares) || 0,
-                price: finalPrice,
+                price: finalPrice, // 存入資料庫作為成本
                 stopLoss: Number(item.stopLoss) || 0,
                 date: new Date()
             };
@@ -138,7 +149,9 @@ app.post('/api/sync_data', async (req, res) => {
     }
 });
 
-// API: 刪除
+// ==========================================
+// 4. 刪除持倉 (DELETE)
+// ==========================================
 app.delete('/api/stocks/:id', async (req, res) => {
     try {
         await Stock.findByIdAndDelete(req.params.id);
