@@ -48,7 +48,7 @@ const Holding = mongoose.model('Holding', holdingSchema);
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body || {};
 
-  // 👉 固定帳號密碼（和 admin.html 保持一致）
+  // 固定帳號密碼（和 admin.html 保持一致）
   const FIXED_USER = 'admin';
   const FIXED_PASS = 'Qq112233.';
 
@@ -68,7 +68,7 @@ app.post('/api/admin/login', async (req, res) => {
 });
 
 // ======================================================
-// 共用：向 Yahoo 抓即時價格
+// 共用：向 Yahoo 抓即時價格（若失敗則回傳 null）
 // ======================================================
 async function getRealStockPrice(code) {
   if (!yahooFinance) return null;
@@ -96,6 +96,7 @@ async function getRealStockPrice(code) {
       return null;
     }
   } catch (error) {
+    // 這裡會看到你 log 裡的 "Too Many Requests"
     console.log(`❌ 抓取報錯 [${code}]:`, error.message);
     return null;
   }
@@ -156,8 +157,12 @@ app.post('/api/save_data', async (req, res) => {
   }
 });
 
-// 你其他的 API（例如更新價格、刪除、等等）可以繼續往下加
-// ...
+// ======================================================
+// 健康檢查 (方便測試 Render 是否活著)
+// ======================================================
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // ======================================================
 // 啟動伺服器
