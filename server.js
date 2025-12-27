@@ -16,7 +16,9 @@ app.use(express.json());
 // 2. 資料庫連線 (MongoDB Connection)
 // ==========================================
 // ⚠️ 注意：請確保下面的連線字串是你完整的 MongoDB 地址
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://admin:admin112233@cluster0.mongodb.net/stock-app?retryWrites=true&w=majority";
+// 範例：注意 @ 後面的 cluster0.xxxxx 才是正確的
+const MONGO_URI = "mongodb+srv://admin:admin112233@cluster0.is84pny.mongodb.net/stock-app?retryWrites=true&w=majority";
+
 
 mongoose.connect(MONGO_URI)
     .then(() => console.log('✅ MongoDB 連線成功'))
