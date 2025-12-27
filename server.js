@@ -12,7 +12,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // MongoDB 連接
-mongoose.connect('mongodb+srv://admin:admin112233@cluster0.mongodb.net/stock_app?retryWrites=true&w=majority&appName=Cluster0')
+mongoose.connect('mongodb+srv://admin:admin112233@cluster0.is84pny.mongodb.net/stock_app?retryWrites=true&w=majority&appName=Cluster0')
     .then(() => console.log('✅ MongoDB 連接成功'))
     .catch(err => console.error('❌ MongoDB 連接失敗:', err));
 
