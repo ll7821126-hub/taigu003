@@ -13,154 +13,186 @@ app.use(bodyParser.json());
 
 // MongoDB 連接
 mongoose.connect('mongodb+srv://admin:admin112233@cluster0.is84pny.mongodb.net/stock_app?retryWrites=true&w=majority&appName=Cluster0')
-    .then(() => console.log('✅ MongoDB 連接成功'))
-    .catch(err => console.error('❌ MongoDB 連接失敗:', err));
+  .then(() => console.log('✅ MongoDB 連接成功'))
+  .catch(err => console.error('❌ MongoDB 連接失敗:', err));
 
-// 定義資料結構
-const stockSchema = new mongoose.Schema({
-    client: String,
-    name: String,
-    code: String,
-    shares: Number,
-    price: Number,     // 這是你的「成本價」
-    stopLoss: Number,
-    date: { type: Date, default: Date.now }
+/**
+ * 後端資料結構，對齊前端 holdings
+ * 前端欄位：
+ *  id, userId, client, stockName, code,
+ *  quantity, cost, currentPrice, stopLoss, takeProfit, recommendType
+ */
+const holdingSchema = new mongoose.Schema({
+  userId: String,          // 對應前端 localStorage 的 userId
+  client: String,
+  stockName: String,
+  code: String,
+  quantity: Number,
+  cost: Number,            // 成本價
+  currentPrice: Number,    // 目前市價
+  stopLoss: Number,
+  takeProfit: Number,
+  recommendType: { type: String, default: 'no' },
+  createdAt: { type: Date, default: Date.now }
 });
-const Stock = mongoose.model('Stock', stockSchema);
 
-// 🕵️‍♂️ 偵探版：獲取股價函數 (帶詳細日誌)
+const Holding = mongoose.model('Holding', holdingSchema);
+
+// ------------------------------------------------------
+// 共用：抓 Yahoo 股價（保持你原本的寫法）
+// ------------------------------------------------------
 async function getRealStockPrice(code) {
-    if (!yahooFinance) return null;
-    if (!code) return null;
+  if (!yahooFinance) return null;
+  if (!code) return null;
 
-    try {
-        let symbol = code.trim();
-        
-        // 台灣股票邏輯：如果是純數字 (如 2330)，加上 .TW
-        if (/^\d+$/.test(symbol)) {
-            symbol = symbol + '.TW';
-        }
+  try {
+    let symbol = code.trim();
 
-        console.log(`🔍 正在向 Yahoo 查詢: [${symbol}]`);
-
-        const quote = await yahooFinance.quote(symbol, { validateResult: false });
-        
-        if (quote && typeof quote.regularMarketPrice === 'number') {
-            console.log(`✅ Yahoo 回傳 [${symbol}]: ${quote.regularMarketPrice} (幣種: ${quote.currency})`);
-            return quote.regularMarketPrice;
-        } else {
-            console.log(`⚠️ Yahoo 有回應，但沒有價格數據: [${symbol}]`, quote);
-            return null;
-        }
-    } catch (error) {
-        console.log(`❌ 抓取報錯 [${code}]:`, error.message);
-        return null;
+    // 台灣股票邏輯：純數字加 .TW
+    if (/^\d+$/.test(symbol)) {
+      symbol = symbol + '.TW';
     }
+
+    console.log(`🔍 正在向 Yahoo 查詢: [${symbol}]`);
+
+    const quote = await yahooFinance.quote(symbol, { validateResult: false });
+
+    if (quote && typeof quote.regularMarketPrice === 'number') {
+      console.log(`✅ Yahoo 回傳 [${symbol}]: ${quote.regularMarketPrice} (幣種: ${quote.currency})`);
+      return quote.regularMarketPrice;
+    } else {
+      console.log(`⚠️ Yahoo 有回應，但沒有價格數據: [${symbol}]`, quote);
+      return null;
+    }
+  } catch (error) {
+    console.log(`❌ 抓取報錯 [${code}]:`, error.message);
+    return null;
+  }
 }
 
-// ==========================================
-// 1. 獲取所有持倉 (打開網頁時觸發 - GET)
-// ==========================================
-app.get('/api/stocks', async (req, res) => {
-    try {
-        const stocks = await Stock.find();
-        
-        // 重新抓取最新價格，但不覆蓋成本
-        const updatedStocks = await Promise.all(stocks.map(async (stock) => {
-            const latestPrice = await getRealStockPrice(stock.code);
-            return {
-                ...stock.toObject(),
-                // ⚠️ 關鍵：保持 price (成本) 不變，將市價放入 currentPrice
-                currentPrice: latestPrice 
-            };
-        }));
-        
-        res.json(updatedStocks);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+// ======================================================
+// 1. 取得雲端持倉（給前端初始化用） GET /api/get_data
+//    前端呼叫：/api/get_data?userId=xxx
+// ======================================================
+app.get('/api/get_data', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) {
+      return res.json({ holdings: [] });
     }
+
+    const holdings = await Holding.find({ userId }).lean();
+    return res.json({ holdings });
+  } catch (error) {
+    console.error('❌ get_data 錯誤:', error);
+    res.status(500).json({ holdings: [], error: 'get_data error' });
+  }
 });
 
-// ==========================================
-// 2. 刷新行情 (點擊按鈕時觸發 - POST)
-// ==========================================
+// ======================================================
+// 2. 刷新行情 POST /api/prices
+//    前端傳：{ codes: ["2330","2317",...] }
+//    回傳：{ "2330": 1510, "2317": 225.5, ... }
+// ======================================================
 app.post('/api/prices', async (req, res) => {
-    try {
-        const stocks = await Stock.find();
-
-        const updatedStocks = await Promise.all(stocks.map(async (stock) => {
-            const latestPrice = await getRealStockPrice(stock.code);
-            return {
-                ...stock.toObject(),
-                // ⚠️ 關鍵：這裡也一樣，用 currentPrice 傳遞市價
-                currentPrice: latestPrice 
-            };
-        }));
-
-        console.log('📦 刷新成功，回傳數據:', updatedStocks);
-        res.json(updatedStocks);
-
-    } catch (error) {
-        console.error('❌ API 錯誤:', error);
-        res.status(500).json({ message: '更新行情失敗' });
+  try {
+    const { codes } = req.body;
+    if (!Array.isArray(codes) || !codes.length) {
+      return res.json({});
     }
+
+    const prices = {};
+
+    // 逐檔查 Yahoo 價格
+    for (const code of codes) {
+      const latestPrice = await getRealStockPrice(code);
+      if (typeof latestPrice === 'number') {
+        prices[code] = latestPrice;
+      }
+    }
+
+    console.log('📦 刷新成功，回傳價格物件:', prices);
+    return res.json(prices);
+  } catch (error) {
+    console.error('❌ /api/prices 錯誤:', error);
+    res.status(500).json({ message: '更新行情失敗' });
+  }
 });
 
-// ==========================================
-// 3. 同步數據 (保存/更新持倉 - POST)
-// ==========================================
+// ======================================================
+// 3. 同步數據（保存/更新持倉）POST /api/sync_data
+//    前端傳：{ userId, clientName, holdings }
+//    holdings 的結構就是前端 localStorage 裡那一份
+// ======================================================
 app.post('/api/sync_data', async (req, res) => {
-    try {
-        const { clientName, holdings } = req.body;
-        
-        if (!holdings || !Array.isArray(holdings)) {
-            return res.json({ success: true, message: "無數據" });
-        }
+  try {
+    const { userId, clientName, holdings } = req.body;
 
-        await Stock.deleteMany({ client: clientName });
-
-        const newStocks = await Promise.all(holdings.map(async (item) => {
-            // 這裡保留你原本的邏輯：保存時嘗試抓取價格，如果抓不到就用前端傳來的價格
-            // 注意：這裡存入資料庫的 price 會被視為「成本價」
-            const livePrice = await getRealStockPrice(item.code);
-            let finalPrice = livePrice;
-            
-            if (finalPrice === null) finalPrice = parseFloat(item.price);
-            if (isNaN(finalPrice)) finalPrice = 0;
-
-            return {
-                client: clientName,
-                name: item.name,
-                code: item.code,
-                shares: Number(item.shares) || 0,
-                price: finalPrice, // 存入資料庫作為成本
-                stopLoss: Number(item.stopLoss) || 0,
-                date: new Date()
-            };
-        }));
-
-        if (newStocks.length > 0) {
-            await Stock.insertMany(newStocks);
-        }
-
-        res.json({ success: true, message: "同步成功" });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+    if (!userId) {
+      return res.status(400).json({ success: false, message: '缺少 userId' });
     }
+
+    if (!holdings || !Array.isArray(holdings)) {
+      return res.json({ success: true, message: '無數據' });
+    }
+
+    // 這裡目前的設計是：以 userId 為主，清空後重建一份
+    // 如果你想針對單一 clientName 清，就改成 { userId, client: clientName }
+    await Holding.deleteMany({ userId });
+
+    const docs = holdings.map(h => ({
+      userId,
+      client: h.client,
+      stockName: h.stockName,
+      code: h.code,
+      quantity: Number(h.quantity) || 0,
+      cost: Number(h.cost) || 0,
+      currentPrice: typeof h.currentPrice === 'number'
+        ? h.currentPrice
+        : Number(h.cost) || 0,
+      stopLoss: Number(h.stopLoss) || 0,
+      takeProfit: Number(h.takeProfit) || 0,
+      recommendType: h.recommendType || 'no'
+    }));
+
+    if (docs.length > 0) {
+      await Holding.insertMany(docs);
+    }
+
+    console.log(`☁️ 同步成功，userId=${userId}，筆數=${docs.length}`);
+    res.json({ success: true, message: '同步成功' });
+  } catch (err) {
+    console.error('❌ /api/sync_data 錯誤:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
-// ==========================================
-// 4. 刪除持倉 (DELETE)
-// ==========================================
+// ======================================================
+// 4. （可選）取得所有持倉（除錯用） GET /api/stocks
+// ======================================================
+app.get('/api/stocks', async (req, res) => {
+  try {
+    const list = await Holding.find().lean();
+    res.json(list);
+  } catch (err) {
+    console.error('❌ /api/stocks 錯誤:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ======================================================
+// 5. 刪除持倉（若需要） DELETE /api/stocks/:id
+// ======================================================
 app.delete('/api/stocks/:id', async (req, res) => {
-    try {
-        await Stock.findByIdAndDelete(req.params.id);
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
+  try {
+    await Holding.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ 刪除錯誤:', err);
+    res.status(500).json({ message: err.message });
+  }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
