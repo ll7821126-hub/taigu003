@@ -76,42 +76,32 @@
         }
 
         // 處理登錄
-        async function handleLogin() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+       async function handleLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
 
-            // 按鈕變為讀取中...
-            const btn = document.querySelector('button[onclick="handleLogin()"]');
-            const originalText = btn.innerText;
-            btn.innerText = "登錄中...";
-            btn.disabled = true;
+  try {
+    const response = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
 
-            try {
-                // 這裡會組合成: https://taigu003.onrender.com/api/admin/login
-                const res = await fetch(`${API_URL}/admin/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                
-                const data = await res.json();
+    const result = await response.json();
 
-                if (data.success) {
-                    localStorage.setItem('adminToken', data.token);
-                    showDashboard();
-                } else {
-                    document.getElementById('loginError').innerText = data.message || "帳號或密碼錯誤";
-                    document.getElementById('loginError').style.display = 'block';
-                }
-            } catch (err) {
-                console.error("登錄錯誤:", err);
-                alert('無法連接到後端，請檢查：\n1. 網絡是否正常\n2. Render 伺服器是否已啟動 (可能在休眠)');
-            } finally {
-                // 恢復按鈕
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        }
+    if (result.success) {
+      // 登入成功，保存 token，切換畫面
+      localStorage.setItem('adminToken', result.token);
+      // 例如：顯示主畫面、載入資料
+      // loadDashboard();
+      alert('登入成功');
+    } else {
+      document.getElementById('loginError').innerText = result.message || '帳號或密碼錯誤';
+    }
+  } catch (err) {
+    document.getElementById('loginError').innerText = '登入失敗，請稍後再試';
+  }
+}
 
         // 顯示儀表板並獲取數據
         function showDashboard() {

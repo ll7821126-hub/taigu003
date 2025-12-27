@@ -49,24 +49,32 @@ const Holding = mongoose.model('Holding', holdingSchema);
 // 0. Admin 安全登入（使用環境變數 + 雜湊密碼）
 //    POST /api/admin/login
 // ======================================================
-if (!process.env.ADMIN_USER || !process.env.ADMIN_PASS_HASH) {
-  console.warn('⚠️ 尚未設定 ADMIN_USER / ADMIN_PASS_HASH 環境變數，');
-  console.warn('   後台登入會一律失敗，請到 Render 設定環境變數。');
-}
-
+i// 管理員登入（寫死帳號密碼）
 app.post('/api/admin/login', async (req, res) => {
-  try {
-    const { username, password } = req.body || {};
+  const { username, password } = req.body || {};
 
-    const ADMIN_USER = process.env.ADMIN_USER;          // 例如 "boss"
-    const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH; // bcrypt 雜湊
+  // 這裡填你要固定的帳號密碼
+  const FIXED_USER = 'admin';        
+  const FIXED_PASS = 'Qq112233.';       
 
-    if (!ADMIN_USER || !ADMIN_PASS_HASH) {
-      return res.status(500).json({
-        success: false,
-        message: '後端尚未配置管理員帳號，請聯絡系統管理員'
-      });
-    }
+  // 檢查帳號密碼
+  if (username === FIXED_USER && password === FIXED_PASS) {
+    // 給一個簡單 token
+    const token = 'admin-fixed-token';
+
+    return res.json({
+      success: true,
+      token,
+      message: '登入成功'
+    });
+  } else {
+    return res.json({
+      success: false,
+      message: '帳號或密碼錯誤'
+    });
+  }
+});
+
 
     // 1. 比對帳號
     if (username !== ADMIN_USER) {
