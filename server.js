@@ -47,7 +47,20 @@ app.get('/', (req, res) => {
     res.send('Backend is running correctly!');
 });
 
-// 🟢 獲取所有持倉 (Read)
+// 🟢 [新增] 管理員登錄接口
+app.post('/api/admin/login', (req, res) => {
+    const { username, password } = req.body;
+
+    // 👇 這裡設定你的後台帳號密碼
+    // 目前設定為：帳號 admin / 密碼 123456
+    if (username === 'admin' && password === '123456') {
+        res.json({ success: true, token: 'admin-secret-token' });
+    } else {
+        res.status(401).json({ success: false, message: '帳號或密碼錯誤' });
+    }
+});
+
+// 🔵 獲取所有持倉 (Read) - 用於後台顯示列表
 app.get('/api/stocks', async (req, res) => {
     try {
         const stocks = await Stock.find().sort({ date: -1 }); // 按時間倒序排列
@@ -57,7 +70,7 @@ app.get('/api/stocks', async (req, res) => {
     }
 });
 
-// 🔵 新增持倉 (Create)
+// 🟠 新增持倉 (Create) - 用於前端表單提交
 app.post('/api/stocks', async (req, res) => {
     try {
         const newStock = new Stock(req.body);
@@ -68,7 +81,7 @@ app.post('/api/stocks', async (req, res) => {
     }
 });
 
-// 🔴 刪除持倉 (Delete)
+// 🔴 刪除持倉 (Delete) - 用於後台刪除數據
 app.delete('/api/stocks/:id', async (req, res) => {
     try {
         await Stock.findByIdAndDelete(req.params.id);
