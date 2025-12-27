@@ -1,14 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
+const cors = require('cors'); 
 
 const app = express();
+app.use(cors()); 
+app.use(express.json());
 
 // ==========================================
 // 1. 中間件設定 (Middleware)
 // ==========================================
 // ✅ 啟用跨域 (解決 Network Error 關鍵)
-app.use(cors()); 
 // ✅ 解析 JSON 數據
 app.use(express.json()); 
 
