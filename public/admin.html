@@ -206,7 +206,7 @@
       margin-right:4px;
     }
 
-    /* ====== 客戶詳細 Modal 內的持倉卡片（前端風格） ====== */
+    /* ====== Modal 內的持倉卡片（前端風格） ====== */
     .client-summary-card {
       border-radius: 12px;
       padding: 10px 14px;
@@ -237,7 +237,7 @@
 
     .holding-row-card {
       display: grid;
-      grid-template-columns: 1.6fr 0.9fr 0.9fr 0.9fr 0.9fr 1fr 1fr 1fr;
+      grid-template-columns: 1.6fr 0.8fr 0.9fr 0.9fr 0.9fr 1fr 1fr 0.9fr;
       gap: 8px;
       padding: 8px 10px;
       border-bottom: 1px solid #e5e7eb;
@@ -288,6 +288,17 @@
       padding: 2px 8px;
       font-size: 11px;
       font-weight: 600;
+    }
+
+    .holding-actions {
+      display:flex;
+      gap:4px;
+      justify-content:flex-end;
+    }
+    .btn-icon-mini{
+      border-radius:999px;
+      font-size:10px;
+      padding:3px 7px;
     }
   </style>
 </head>
@@ -377,15 +388,15 @@
     <ul class="nav nav-pills mb-2 tab-pill" id="typeTab" role="tablist">
       <li class="nav-item" role="presentation">
         <button class="nav-link active" id="tabAll" data-bs-toggle="pill" type="button"
-                onclick="setFilterType('all')">全部客戶</button>
+                onclick="setFilterType('all')">全部</button>
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="tabRec" data-bs-toggle="pill" type="button"
-                onclick="setFilterType('rec')">有推薦飆股</button>
+                onclick="setFilterType('rec')">推薦飆股</button>
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="tabRisk" data-bs-toggle="pill" type="button"
-                onclick="setFilterType('loss')">整體虧損中</button>
+                onclick="setFilterType('loss')">虧損持倉</button>
       </li>
     </ul>
 
@@ -406,33 +417,36 @@
               <div class="toolbar-right">
                 <span class="mini-label">排序</span>
                 <select id="sortSelect" class="form-select form-select-sm" style="min-width: 210px;">
-                  <option value="value_desc">按客戶總市值（大 → 小）</option>
-                  <option value="value_asc">按客戶總市值（小 → 大）</option>
-                  <option value="pnl_desc">按整體盈虧（高 → 低）</option>
-                  <option value="pnl_asc">按整體盈虧（低 → 高）</option>
-                  <option value="time_desc">按最新提交時間</option>
+                  <option value="client_asc">按客戶姓名</option>
+                  <option value="pnl_desc">按盈虧（高 → 低）</option>
+                  <option value="pnl_asc">按盈虧（低 → 高）</option>
+                  <option value="value_desc">按市值（大 → 小）</option>
+                  <option value="value_asc">按市值（小 → 大）</option>
+                  <option value="time_desc">按最新時間</option>
                 </select>
               </div>
             </div>
 
             <div class="small-muted mb-2">
-              每列代表「一位客戶」的整體持倉，點客戶姓名可展開所有股票與完整檔案。
+              每列代表「一筆持倉」，同一客戶多檔股票會分行顯示；點客戶姓名可看該客戶的完整檔案與全部持股。
             </div>
 
-            <!-- 表格視圖：已合併為「客戶」 -->
+            <!-- 表格視圖：一筆持倉一列 -->
             <div id="tableView">
               <div class="table-responsive">
                 <table class="table table-hover table-striped align-middle mb-0">
                   <thead class="table-dark">
                     <tr>
-                      <th style="width:18%;">客戶姓名</th>
-                      <th>持有股票概況</th>
-                      <th class="text-end" style="width:10%;">股票檔數</th>
-                      <th class="text-end" style="width:12%;">總持股數</th>
-                      <th class="text-end" style="width:14%;">總市值</th>
-                      <th class="text-end" style="width:14%;">整體盈虧</th>
-                      <th class="text-end" style="width:10%;">報酬率</th>
-                      <th style="width:12%;">狀態</th>
+                      <th style="width:14%;">客戶姓名</th>
+                      <th style="width:18%;">股票</th>
+                      <th style="width:8%;">代碼</th>
+                      <th class="text-end" style="width:10%;">數量</th>
+                      <th class="text-end" style="width:10%;">成本價</th>
+                      <th class="text-end" style="width:10%;">即時價</th>
+                      <th class="text-end" style="width:12%;">市值</th>
+                      <th class="text-end" style="width:10%;">盈虧</th>
+                      <th class="text-end" style="width:8%;">報酬率</th>
+                      <th style="width:10%;">操作</th>
                     </tr>
                   </thead>
                   <tbody id="tableBody"></tbody>
@@ -467,9 +481,9 @@
         <div class="stat-card">
           <h6 class="mb-2">💡 使用提示</h6>
           <small class="small-muted">
-            ‧ 每一列是「客戶彙總」，點客戶姓名可展開該客戶所有持股與檔案<br>
-            ‧ 「有推薦飆股」篩選只顯示至少持有一檔推薦飆股的客戶<br>
-            ‧ 「整體虧損中」方便你優先關注風險較高客戶
+            ‧ 列表一行一筆持倉，方便比對與刪除<br>
+            ‧ 點「客戶姓名」可查看該客戶完整檔案與所有持股<br>
+            ‧ 盈虧金額以紅綠顏色顯示，綠色代表獲利、紅色代表虧損
           </small>
         </div>
       </div>
@@ -500,11 +514,11 @@
   <script>
     const API_BASE = '/api';
 
-    let allHoldings = [];        // 後端原始每筆持倉
-    let groupByClient = [];      // 依客戶合併後的陣列
+    let allHoldings = [];   // 後端原始每筆持倉
+    let groupByClient = []; // 依客戶合併（給 Modal & 統計用）
     let filterType = 'all';
     let searchText = '';
-    let sortMode = 'value_desc';
+    let sortMode = 'client_asc';
     let autoRefreshTimer = null;
 
     // 若已有登入 token，直接顯示後台
@@ -598,7 +612,7 @@
     // ---------------- 取得資料 + 即時價 ----------------
     async function fetchData() {
       const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">載入中...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">載入中...</td></tr>';
 
       try {
         const res = await fetch(`${API_BASE}/get_data`);
@@ -634,11 +648,11 @@
         render();
       } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">載入失敗</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">載入失敗</td></tr>';
       }
     }
 
-    // ---------------- 依客戶合併 ----------------
+    // ---------------- 依客戶合併（給 Modal & 統計） ----------------
     function buildClientGroups() {
       const map = {};
 
@@ -656,47 +670,42 @@
             totalQty: 0,
             totalCost: 0,
             totalValue: 0,
-            hasRecommend: false,
-            latestTime: row.createdAt ? new Date(row.createdAt) : new Date(0)
+            hasRecommend: false
           };
         }
-
         map[client].holdings.push(row);
         map[client].totalQty += qty;
         map[client].totalCost += qty * cost;
         map[client].totalValue += value;
         if (row.recommendType === 'yes') map[client].hasRecommend = true;
-        if (row.createdAt && new Date(row.createdAt) > map[client].latestTime) {
-          map[client].latestTime = new Date(row.createdAt);
-        }
       });
 
       groupByClient = Object.values(map);
     }
 
-    // ---------------- 套用篩選 / 排序 ----------------
-    function getFilteredAndSortedGroups() {
-      let groups = [...groupByClient];
+    // ---------------- 取得列表（單筆持倉）經篩選 / 排序 ----------------
+    function getFilteredAndSortedRows() {
+      let rows = [...allHoldings];
 
-      // 搜尋（客戶 or 股票）
+      // 搜尋
       if (searchText) {
-        groups = groups.filter(g => {
-          const name = (g.client || '').toLowerCase();
-          if (name.includes(searchText)) return true;
-          // 股票名稱 / 代碼
-          return g.holdings.some(h => {
-            const n = (h.stockName || '').toLowerCase();
-            const c = (h.code || '').toLowerCase();
-            return n.includes(searchText) || c.includes(searchText);
-          });
+        rows = rows.filter(r => {
+          const client = (r.client || '').toLowerCase();
+          const name = (r.stockName || '').toLowerCase();
+          const code = (r.code || '').toLowerCase();
+          return client.includes(searchText) || name.includes(searchText) || code.includes(searchText);
         });
       }
 
       // 類型篩選
-      groups = groups.filter(g => {
-        const pnl = g.totalValue - g.totalCost;
+      rows = rows.filter(r => {
+        const qty  = Number(r.quantity) || 0;
+        const cost = Number(r.cost) || 0;
+        const cur  = Number(r.currentPrice ?? r.cost) || 0;
+        const pnl  = qty * (cur - cost);
+
         if (filterType === 'rec') {
-          return g.hasRecommend;
+          return r.recommendType === 'yes';
         }
         if (filterType === 'loss') {
           return pnl < 0;
@@ -705,45 +714,65 @@
       });
 
       // 排序
-      groups.sort((a, b) => {
-        const pnlA = a.totalValue - a.totalCost;
-        const pnlB = b.totalValue - b.totalCost;
+      rows.sort((a, b) => {
+        const qtyA = Number(a.quantity) || 0;
+        const costA = Number(a.cost) || 0;
+        const curA = Number(a.currentPrice ?? a.cost) || 0;
+        const valueA = qtyA * curA;
+        const pnlA = qtyA * (curA - costA);
 
-        if (sortMode === 'value_desc') return b.totalValue - a.totalValue;
-        if (sortMode === 'value_asc') return a.totalValue - b.totalValue;
+        const qtyB = Number(b.quantity) || 0;
+        const costB = Number(b.cost) || 0;
+        const curB = Number(b.currentPrice ?? b.cost) || 0;
+        const valueB = qtyB * curB;
+        const pnlB = qtyB * (curB - costB);
+
+        if (sortMode === 'client_asc') {
+          return (a.client || '').localeCompare(b.client || '');
+        }
         if (sortMode === 'pnl_desc') return pnlB - pnlA;
-        if (sortMode === 'pnl_asc') return pnlA - pnlB;
-        if (sortMode === 'time_desc') return b.latestTime - a.latestTime;
+        if (sortMode === 'pnl_asc')  return pnlA - pnlB;
+        if (sortMode === 'value_desc') return valueB - valueA;
+        if (sortMode === 'value_asc')  return valueA - valueB;
+        if (sortMode === 'time_desc') {
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        }
         return 0;
       });
 
-      return groups;
+      return rows;
     }
 
     // ---------------- 畫面渲染 ----------------
     function render() {
-      const groups = getFilteredAndSortedGroups();
+      const rows = getFilteredAndSortedRows();
       const tbody = document.getElementById('tableBody');
 
       // 整體統計
-      let clientCount = groupByClient.length;
+      let clientSet = new Set();
       let holdingCount = allHoldings.length;
       let totalQty = 0;
       let totalCost = 0;
       let totalValue = 0;
-      let recClientCount = 0;
+      let recClientSet = new Set();
 
-      groupByClient.forEach(g => {
-        totalQty += g.totalQty;
-        totalCost += g.totalCost;
-        totalValue += g.totalValue;
-        if (g.hasRecommend) recClientCount++;
+      allHoldings.forEach(r => {
+        const client = r.client || '未命名客戶';
+        clientSet.add(client);
+        const qty  = Number(r.quantity) || 0;
+        const cost = Number(r.cost) || 0;
+        const cur  = Number(r.currentPrice ?? r.cost) || 0;
+        const value = qty * cur;
+        totalQty += qty;
+        totalCost += qty * cost;
+        totalValue += value;
+        if (r.recommendType === 'yes') recClientSet.add(client);
       });
 
-      document.getElementById('statClientCount').textContent = clientCount;
+      document.getElementById('statClientCount').textContent = clientSet.size;
       document.getElementById('statHoldingCount').textContent = holdingCount;
       document.getElementById('statQty').textContent = totalQty.toLocaleString('zh-TW');
-      document.getElementById('statRecClientCount').textContent = recClientCount;
+      document.getElementById('statRecClientCount').textContent = recClientSet.size;
       document.getElementById('statValue').textContent =
         totalValue.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
 
@@ -765,52 +794,45 @@
         rateEl.className = 'fw-semibold';
       }
 
-      // 客戶列表
-      if (!groups.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">目前沒有符合條件的客戶</td></tr>';
+      // 列表
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">目前沒有符合條件的持倉</td></tr>';
         return;
       }
 
       tbody.innerHTML = '';
-      groups.forEach(g => {
-        const pnl = g.totalValue - g.totalCost;
-        const rate = g.totalCost > 0 ? pnl / g.totalCost * 100 : 0;
+      rows.forEach(r => {
+        const qty  = Number(r.quantity) || 0;
+        const cost = Number(r.cost) || 0;
+        const cur  = Number(r.currentPrice ?? r.cost) || 0;
+        const value = qty * cur;
+        const pnl   = qty * (cur - cost);
+        const rate  = cost > 0 ? (cur - cost) / cost * 100 : 0;
         const pnlClass = pnl >= 0 ? 'text-up' : 'text-down';
-        const rateStr = g.totalCost > 0
-          ? (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%'
-          : '-';
-
-        const recTag = g.hasRecommend ? '<span class="badge bg-primary">有推薦飆股</span>' : '';
-
-        // 列出前 3 檔股票做摘要
-        const briefStocks = g.holdings
-          .slice(0, 3)
-          .map(h => `${h.stockName || ''}(${h.code || ''})`)
-          .join('、');
-
-        const moreCount = g.holdings.length > 3 ? ` 等 ${g.holdings.length} 檔` : '';
+        const rateStr = cost > 0 ? ((rate>=0?'+':'')+rate.toFixed(2)+'%') : '-';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>
-            <span class="client-link" onclick="showClientDetail('${g.client.replace(/'/g,"&#39;")}')">
-              ${g.client}
+            <span class="client-link" onclick="showClientDetail('${(r.client || '未命名客戶').replace(/'/g,"&#39;")}')">
+              ${r.client || '未命名客戶'}
             </span>
           </td>
-          <td>
-            ${briefStocks || '—'}${moreCount}
-          </td>
-          <td class="text-end">${g.holdings.length}</td>
-          <td class="text-end">${g.totalQty.toLocaleString('zh-TW')}</td>
-          <td class="text-end">${g.totalValue.toLocaleString('zh-TW',{maximumFractionDigits:0})}</td>
+          <td>${r.stockName || ''}</td>
+          <td>${r.code || ''}</td>
+          <td class="text-end">${qty.toLocaleString('zh-TW')}</td>
+          <td class="text-end">${cost || ''}</td>
+          <td class="text-end">${cur || ''}</td>
+          <td class="text-end">${value ? value.toLocaleString('zh-TW',{maximumFractionDigits:0}) : ''}</td>
           <td class="text-end ${pnlClass}">
-            ${(pnl >= 0 ? '+' : '') + pnl.toFixed(0)}
+            ${(pnl>=0?'+':'') + pnl.toFixed(0)}
           </td>
-          <td class="text-end ${pnlClass}">
-            ${rateStr}
-          </td>
+          <td class="text-end ${pnlClass}">${rateStr}</td>
           <td>
-            ${recTag}
+            <button class="btn btn-outline-danger btn-sm btn-icon-mini"
+                    onclick="deleteHolding('${r._id}')">
+              刪除
+            </button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -823,7 +845,7 @@
       const clientGroup = groupByClient.find(g => g.client === clientName);
       if (!clientGroup) return;
 
-      // 合併客戶檔案（所有持倉的 clientProfile）
+      // 合併客戶檔案
       const sameRows = clientGroup.holdings.filter(r => r.clientProfile);
       const mergedProfile = sameRows.reduce((acc, r) => {
         const p = r.clientProfile || {};
@@ -868,7 +890,6 @@
         <div class="mb-2">
           <h6 class="mb-2">持倉明細（共 ${clientGroup.holdings.length} 檔）</h6>
 
-          <!-- 上方 summary 條 -->
           <div class="client-summary-card">
             <div class="title">
               ${clientGroup.client || ''} |
@@ -888,7 +909,6 @@
             </div>
           </div>
 
-          <!-- 下方每檔持股 -->
           <div class="client-holdings-wrapper mt-2">
             <div class="holding-row-card header">
               <div>股票 / 標籤</div>
@@ -898,7 +918,7 @@
               <div class="text-end">即時價</div>
               <div class="text-end">市值</div>
               <div class="text-end">盈虧</div>
-              <div class="text-end">報酬率</div>
+              <div class="text-end">操作</div>
             </div>
 
             ${clientGroup.holdings.map(r => {
@@ -930,10 +950,17 @@
                   </div>
                   <div class="text-end">
                     ${pnl
-                      ? `<span class="${pnlClass}">${(pnl>=0?'+':'')+pnl.toFixed(0)}</span>`
+                      ? `<span class="${pnlClass}">${(pnl>=0?'+':'')+pnl.toFixed(0)} (${rateStr})</span>`
                       : '-'}
                   </div>
-                  <div class="text-end">${rateStr}</div>
+                  <div class="holding-actions">
+                    <!-- 這裡預留編輯按鈕，之後可串接前端相同 API -->
+                    <!-- <button class="btn btn-outline-secondary btn-icon-mini">編輯</button> -->
+                    <button class="btn btn-outline-danger btn-icon-mini"
+                            onclick="deleteHolding('${r._id}', true)">
+                      刪除
+                    </button>
+                  </div>
                 </div>
               `;
             }).join('')}
@@ -947,7 +974,37 @@
       modal.show();
     }
 
-    // ---------------- 匯出 CSV（仍以每筆持倉為單位） ----------------
+    // ---------------- 刪除持倉 ----------------
+    async function deleteHolding(id, fromModal = false) {
+      if (!confirm('確定要刪除這筆持倉嗎？')) return;
+      try {
+        const res = await fetch(`${API_BASE}/delete_position`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const result = await res.json();
+        if (!result.success) {
+          alert(result.message || '刪除失敗');
+          return;
+        }
+        // 從前端陣列移除
+        allHoldings = allHoldings.filter(r => r._id !== id);
+        buildClientGroups();
+        render();
+        if (fromModal) {
+          // 重新整理 Modal 內容
+          const openModal = document.getElementById('clientDetailModal');
+          const clientName = document.querySelector('#clientDetailBody table tbody tr td')?.textContent || '';
+          if (clientName) showClientDetail(clientName);
+        }
+      } catch (e) {
+        console.error(e);
+        alert('刪除失敗，請稍後再試');
+      }
+    }
+
+    // ---------------- 匯出 CSV ----------------
     function exportCSV() {
       if (!allHoldings.length) {
         alert('目前沒有可匯出的資料');
