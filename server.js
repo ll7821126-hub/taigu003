@@ -264,6 +264,41 @@ app.post('/api/update_position', async (req, res) => {
 });
 
 // ======================================================
+// 2.7 只更新某客戶的 clientProfile（該 userId + client 的所有持倉一起更新）
+// ======================================================
+app.post('/api/update_client_profile', async (req, res) => {
+  try {
+    const { userId, client, clientProfile } = req.body || {};
+
+    if (!userId || !client || !clientProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId、client、clientProfile 為必填'
+      });
+    }
+
+    // 一次更新這位客戶的所有持倉 document
+    const result = await Holding.updateMany(
+      { userId, client },
+      { $set: { clientProfile } }
+    );
+
+    return res.json({
+      success: true,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (err) {
+    console.error('❌ /api/update_client_profile 錯誤:', err);
+    return res.status(500).json({
+      success: false,
+      message: '更新客戶檔案失敗'
+    });
+  }
+});
+
+
+// ======================================================
 // 2.6 刪除持倉 POST /api/delete_position
 // ======================================================
 app.post('/api/delete_position', async (req, res) => {
