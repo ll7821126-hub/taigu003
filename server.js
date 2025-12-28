@@ -5,6 +5,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const yahooFinance = require('yahoo-finance2').default;
 const path = require('path');
+const fetch = require('node-fetch'); // TWSE / TPEx 用
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,8 +37,6 @@ const holdingSchema = new mongoose.Schema({
   stopLoss: Number,
   takeProfit: Number,
   recommendType: { type: String, default: 'no' },
-
-  // ⭐ 客戶檔案（和前端 profile 欄位對應）
   clientProfile: {
     gender: String,
     age: String,
@@ -47,51 +46,54 @@ const holdingSchema = new mongoose.Schema({
     family: String,
     note: String
   },
-
   createdAt: { type: Date, default: Date.now }
 });
 
 const Holding = mongoose.model('Holding', holdingSchema);
 
-// ======================================================
-// 0. Admin 登入（寫死帳號密碼） POST /api/admin/login
-// ======================================================
+// ---------------------- Admin 登入 ----------------------
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body || {};
-
   const FIXED_USER = 'admin';
   const FIXED_PASS = 'Qq112233.';
 
   if (username === FIXED_USER && password === FIXED_PASS) {
     const token = 'admin-fixed-token';
-    return res.json({
-      success: true,
-      token,
-      message: '登入成功'
-    });
+    return res.json({ success: true, token, message: '登入成功' });
   } else {
-    return res.json({
-      success: false,
-      message: '帳號或密碼錯誤'
-    });
+    return res.json({ success: false, message: '帳號或密碼錯誤' });
   }
 });
 
 // ======================================================
-// 共用：向 Yahoo 抓即時價格
+// 工具：代碼正規化（去空白、全形→半形）
 // ======================================================
-async function getRealStockPrice(code) {
+function toHalfWidth(str) {
+  return str.replace(/[\uff01-\uff5e]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
+  );
+}
+function normalizeCode(code) {
+  if (!code) return '';
+  return toHalfWidth(String(code).trim());
+}
+
+// ======================================================
+// 0. 共用：向 Yahoo 抓「單檔」即時價格（上市 / 上櫃 / ETF / 大多權證）
+// ======================================================
+async function getRealStockPriceFromYahoo(singleCode) {
   if (!yahooFinance) return null;
-  if (!code) return null;
+  if (!singleCode) return null;
 
   try {
-    let symbol = code.trim();
+    let symbol = normalizeCode(singleCode);
 
+    // 純數字則視為台股，補 .TW
     if (/^\d+$/.test(symbol)) {
       symbol = symbol + '.TW';
     }
 
-    console.log(`🔍 正在向 Yahoo 查詢: [${symbol}]`);
+    console.log(`🔍 向 Yahoo 查詢: [${symbol}]`);
 
     const quote = await yahooFinance.quote(symbol, { validateResult: false });
 
@@ -101,35 +103,128 @@ async function getRealStockPrice(code) {
       );
       return quote.regularMarketPrice;
     } else {
-      console.log(`⚠️ Yahoo 有回應，但沒有價格數據: [${symbol}]`, quote);
+      console.log(`⚠️ Yahoo 有回應但無價格: [${symbol}]`);
       return null;
     }
   } catch (error) {
-    console.log(`❌ 抓取報錯 [${code}]:`, error.message);
+    console.log(`❌ Yahoo 抓取報錯 [${singleCode}]:`, error.message);
     return null;
   }
 }
 
 // ======================================================
-// 0.5 取得多檔股票即時價格  POST /api/prices
+// 0.1 多檔：優先用 Yahoo，再用 TWSE / TPEx 補昨收
+// ======================================================
+
+// TWSE：上市（含 ETF、多數權證）昨收價
+async function fetchTwseClosingPriceMap(codes) {
+  const map = {};
+  if (!codes.length) return map;
+
+  const url = 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL';
+  try {
+    const res = await fetch(url);
+    const arr = await res.json(); // [{Code, ClosingPrice, ...}, ...]
+    const set = new Set(codes);
+
+    arr.forEach(row => {
+      const c = normalizeCode(row.Code);
+      if (!set.has(c)) return;
+      const p = Number(row.ClosingPrice);
+      if (!Number.isNaN(p)) map[c] = p;
+    });
+  } catch (err) {
+    console.error('❌ 抓 TWSE 價格失敗:', err.message || err);
+  }
+
+  return map;
+}
+
+// TPEx：上櫃 / 興櫃 昨收價
+async function fetchTpexClosingPriceMap(codes) {
+  const map = {};
+  if (!codes.length) return map;
+
+  // 實際可依需求改其他 tpex openapi endpoint
+  const url = 'https://www.tpex.org.tw/openapi/v1/tpex_main_board_quotes';
+
+  try {
+    const res = await fetch(url);
+    const arr = await res.json();
+    const set = new Set(codes);
+
+    arr.forEach(row => {
+      const c = normalizeCode(row.Code || row.SecuritiesCode || row['股票代號']);
+      if (!set.has(c)) return;
+      const p = Number(row.ClosePrice || row.ClosingPrice || row['收盤價']);
+      if (!Number.isNaN(p)) map[c] = p;
+    });
+  } catch (err) {
+    console.error('❌ 抓 TPEx 價格失敗:', err.message || err);
+  }
+
+  return map;
+}
+
+// 主整合：先 Yahoo，再 TWSE / TPEx
+async function getTaiwanPriceMap(codes) {
+  const normCodes = [...new Set((codes || []).map(normalizeCode).filter(Boolean))];
+  if (!normCodes.length) return {};
+
+  const result = {};
+
+  // 1) 優先用 Yahoo (即時價) —— 逐檔查
+  for (const code of normCodes) {
+    const p = await getRealStockPriceFromYahoo(code);
+    if (typeof p === 'number') {
+      result[code] = p;
+    }
+  }
+
+  // 2) 找出尚未取得價格的代碼
+  const missing = normCodes.filter(c => typeof result[c] !== 'number');
+  if (!missing.length) return result;
+
+  console.log('⛏ 需用 TWSE / TPEx 補價的代碼:', missing);
+
+  // 3) TWSE + TPEx 補昨收
+  const [twseMap, tpexMap] = await Promise.all([
+    fetchTwseClosingPriceMap(missing),
+    fetchTpexClosingPriceMap(missing)
+  ]);
+
+  missing.forEach(c => {
+    if (typeof twseMap[c] === 'number') result[c] = twseMap[c];
+    else if (typeof tpexMap[c] === 'number') result[c] = tpexMap[c];
+    // 若兩邊都沒有，就保持 undefined，前端會用成本價
+  });
+
+  return result;
+}
+
+// ======================================================
+// 0.5 取得多檔股票價格  POST /api/prices
 // ======================================================
 app.post('/api/prices', async (req, res) => {
   try {
-    const { codes } = req.body || {};
-    if (!Array.isArray(codes) || codes.length === 0) {
+    const rawCodes = Array.isArray(req.body?.codes) ? req.body.codes : [];
+    const codes = rawCodes.map(normalizeCode).filter(Boolean);
+
+    if (!codes.length) {
       return res.json({});
     }
 
-    const result = {};
+    console.log('📥 /api/prices 收到 codes:', codes);
 
-    for (const raw of codes) {
-      if (!raw) continue;
-      const code = String(raw);
-      const price = await getRealStockPrice(code);
-      result[code] = price; // 可能是 number 或 null
+    const priceMap = await getTaiwanPriceMap(codes);
+
+    const missing = codes.filter(c => typeof priceMap[c] !== 'number');
+    if (missing.length) {
+      console.warn('⚠️ 目前抓不到價格的代碼:', missing);
     }
 
-    return res.json(result);
+    console.log('📤 /api/prices 回傳 keys:', Object.keys(priceMap));
+    return res.json(priceMap);
   } catch (err) {
     console.error('❌ /api/prices 錯誤:', err);
     return res.status(500).json({});
@@ -142,10 +237,8 @@ app.post('/api/prices', async (req, res) => {
 app.get('/api/get_data', async (req, res) => {
   try {
     const { userId } = req.query;
-
     const query = userId ? { userId } : {};
     const holdings = await Holding.find(query).sort({ createdAt: -1 });
-
     return res.json(holdings);
   } catch (err) {
     console.error('❌ /api/get_data 錯誤:', err);
@@ -168,7 +261,7 @@ app.post('/api/save_data', async (req, res) => {
       stopLoss,
       takeProfit,
       recommendType,
-      clientProfile          // ⭐ 新增／接收客戶檔案
+      clientProfile
     } = req.body || {};
 
     const holding = new Holding({
@@ -181,7 +274,7 @@ app.post('/api/save_data', async (req, res) => {
       stopLoss,
       takeProfit,
       recommendType,
-      clientProfile          // ⭐ 寫進 MongoDB
+      clientProfile
     });
 
     await holding.save();
@@ -208,7 +301,7 @@ app.post('/api/update_position', async (req, res) => {
       stopLoss,
       takeProfit,
       recommendType,
-      clientProfile          // ⭐ 同樣接收
+      clientProfile
     } = req.body || {};
 
     if (!userId || !client || !code) {
@@ -224,22 +317,19 @@ app.post('/api/update_position', async (req, res) => {
       stopLoss,
       takeProfit,
       recommendType,
-      clientProfile          // ⭐ 更新時也一併寫入
+      clientProfile
     };
 
-    // 移除 undefined 欄位，避免覆蓋成 undefined
     Object.keys(updateFields).forEach((k) => {
       if (updateFields[k] === undefined) delete updateFields[k];
     });
 
-    // 先嘗試更新既有持倉
     const updated = await Holding.findOneAndUpdate(
       { userId, client, code },
       { $set: updateFields },
       { new: true }
     );
 
-    // 如果找不到就新增一筆
     if (!updated) {
       const holding = new Holding({
         userId,
@@ -264,7 +354,7 @@ app.post('/api/update_position', async (req, res) => {
 });
 
 // ======================================================
-// 2.7 只更新某客戶的 clientProfile（該 userId + client 的所有持倉一起更新）
+// 2.7 更新客戶檔案 POST /api/update_client_profile
 // ======================================================
 app.post('/api/update_client_profile', async (req, res) => {
   try {
@@ -277,7 +367,6 @@ app.post('/api/update_client_profile', async (req, res) => {
       });
     }
 
-    // 一次更新這位客戶的所有持倉 document
     const result = await Holding.updateMany(
       { userId, client },
       { $set: { clientProfile } }
@@ -296,7 +385,6 @@ app.post('/api/update_client_profile', async (req, res) => {
     });
   }
 });
-
 
 // ======================================================
 // 2.6 刪除持倉 POST /api/delete_position
