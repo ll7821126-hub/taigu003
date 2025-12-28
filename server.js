@@ -69,7 +69,7 @@ app.post('/api/admin/login', async (req, res) => {
 // 工具：代碼正規化（去空白、全形→半形）
 // ======================================================
 function toHalfWidth(str) {
-  return str.replace(/[\uff01-\uff5e]/g, ch =>
+  return str.replace(/[\uff01-\uff5e]/g, (ch) =>
     String.fromCharCode(ch.charCodeAt(0) - 0xfee0)
   );
 }
@@ -79,7 +79,7 @@ function normalizeCode(code) {
 }
 
 // ======================================================
-// 0. 共用：向 Yahoo 抓「單檔」即時價格（上市 / 上櫃 / ETF / 大多權證）
+// 0. 共用：向 Yahoo 抓「單檔」價格（多欄位 fallback）
 // ======================================================
 async function getRealStockPriceFromYahoo(singleCode) {
   if (!yahooFinance) return null;
@@ -95,19 +95,40 @@ async function getRealStockPriceFromYahoo(singleCode) {
 
     console.log(`🔍 向 Yahoo 查詢: [${symbol}]`);
 
+    // validateResult:false 可避免因為缺欄位就 throw
     const quote = await yahooFinance.quote(symbol, { validateResult: false });
 
-    if (quote && typeof quote.regularMarketPrice === 'number') {
-      console.log(
-        `✅ Yahoo 回傳 [${symbol}]: ${quote.regularMarketPrice} (幣種: ${quote.currency})`
-      );
-      return quote.regularMarketPrice;
-    } else {
-      console.log(`⚠️ Yahoo 有回應但無價格: [${symbol}]`);
+    if (!quote || typeof quote !== 'object') {
+      console.log(`⚠️ Yahoo 回傳格式異常: [${symbol}]`, quote);
       return null;
     }
+
+    // ✅ 核心：多欄位依序 fallback
+    const price =
+      quote.regularMarketPrice ??
+      quote.postMarketPrice ??
+      quote.preMarketPrice ??
+      quote.previousClose ??
+      quote.close;
+
+    if (price != null && !Number.isNaN(price)) {
+      const num = Number(price);
+      console.log(
+        `✅ Yahoo 價格 [${symbol}]: ${num} (幣種: ${quote.currency})`
+      );
+      return num;
+    }
+
+    console.log('⚠️ Yahoo 有回應但無價格:', `[${symbol}]`, {
+      regularMarketPrice: quote.regularMarketPrice,
+      postMarketPrice: quote.postMarketPrice,
+      preMarketPrice: quote.preMarketPrice,
+      previousClose: quote.previousClose,
+      close: quote.close
+    });
+    return null;
   } catch (error) {
-    console.log(`❌ Yahoo 抓取報錯 [${singleCode}]:`, error.message);
+    console.log(`❌ Yahoo 抓取報錯 [${singleCode}]:`, error.message || error);
     return null;
   }
 }
@@ -127,7 +148,7 @@ async function fetchTwseClosingPriceMap(codes) {
     const arr = await res.json(); // [{Code, ClosingPrice, ...}, ...]
     const set = new Set(codes);
 
-    arr.forEach(row => {
+    arr.forEach((row) => {
       const c = normalizeCode(row.Code);
       if (!set.has(c)) return;
       const p = Number(row.ClosingPrice);
@@ -145,16 +166,18 @@ async function fetchTpexClosingPriceMap(codes) {
   const map = {};
   if (!codes.length) return map;
 
-  // 實際可依需求改其他 tpex openapi endpoint
-  const url = 'https://www.tpex.org.tw/openapi/v1/tpex_main_board_quotes';
+  // ✅ 修正：必須是 /web/openapi/...
+  const url = 'https://www.tpex.org.tw/web/openapi/v1/tpex_main_board_quotes';
 
   try {
     const res = await fetch(url);
     const arr = await res.json();
     const set = new Set(codes);
 
-    arr.forEach(row => {
-      const c = normalizeCode(row.Code || row.SecuritiesCode || row['股票代號']);
+    arr.forEach((row) => {
+      const c = normalizeCode(
+        row.Code || row.SecuritiesCode || row['股票代號']
+      );
       if (!set.has(c)) return;
       const p = Number(row.ClosePrice || row.ClosingPrice || row['收盤價']);
       if (!Number.isNaN(p)) map[c] = p;
@@ -173,7 +196,7 @@ async function getTaiwanPriceMap(codes) {
 
   const result = {};
 
-  // 1) 優先用 Yahoo (即時價) —— 逐檔查
+  // 1) 優先用 Yahoo (即時價 / 昨收) —— 逐檔查
   for (const code of normCodes) {
     const p = await getRealStockPriceFromYahoo(code);
     if (typeof p === 'number') {
@@ -182,7 +205,7 @@ async function getTaiwanPriceMap(codes) {
   }
 
   // 2) 找出尚未取得價格的代碼
-  const missing = normCodes.filter(c => typeof result[c] !== 'number');
+  const missing = normCodes.filter((c) => typeof result[c] !== 'number');
   if (!missing.length) return result;
 
   console.log('⛏ 需用 TWSE / TPEx 補價的代碼:', missing);
@@ -193,10 +216,10 @@ async function getTaiwanPriceMap(codes) {
     fetchTpexClosingPriceMap(missing)
   ]);
 
-  missing.forEach(c => {
+  missing.forEach((c) => {
     if (typeof twseMap[c] === 'number') result[c] = twseMap[c];
     else if (typeof tpexMap[c] === 'number') result[c] = tpexMap[c];
-    // 若兩邊都沒有，就保持 undefined，前端會用成本價
+    // 兩邊都沒有就放著，前端會顯示無價格
   });
 
   return result;
@@ -218,7 +241,7 @@ app.post('/api/prices', async (req, res) => {
 
     const priceMap = await getTaiwanPriceMap(codes);
 
-    const missing = codes.filter(c => typeof priceMap[c] !== 'number');
+    const missing = codes.filter((c) => typeof priceMap[c] !== 'number');
     if (missing.length) {
       console.warn('⚠️ 目前抓不到價格的代碼:', missing);
     }
