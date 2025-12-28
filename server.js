@@ -48,7 +48,6 @@ const Holding = mongoose.model('Holding', holdingSchema);
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body || {};
 
-  // 固定帳號密碼（和 admin.html 保持一致）
   const FIXED_USER = 'admin';
   const FIXED_PASS = 'Qq112233.';
 
@@ -96,7 +95,6 @@ async function getRealStockPrice(code) {
       return null;
     }
   } catch (error) {
-    // 這裡會看到你 log 裡的 "Too Many Requests"
     console.log(`❌ 抓取報錯 [${code}]:`, error.message);
     return null;
   }
@@ -183,6 +181,94 @@ app.post('/api/save_data', async (req, res) => {
   } catch (err) {
     console.error('❌ /api/save_data 錯誤:', err);
     return res.status(500).json({ success: false, message: '儲存失敗' });
+  }
+});
+
+// ======================================================
+// 2.5 更新 / 合併持倉 POST /api/update_position
+// 用 userId + client + code 找到那筆，更新 quantity / cost 等
+// ======================================================
+app.post('/api/update_position', async (req, res) => {
+  try {
+    const {
+      userId,
+      client,
+      stockName,
+      code,
+      quantity,
+      cost,
+      stopLoss,
+      takeProfit,
+      recommendType
+    } = req.body || {};
+
+    if (!userId || !client || !code) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'userId、client、code 為必填' });
+    }
+
+    const updateFields = {
+      stockName,
+      quantity,
+      cost,
+      stopLoss,
+      takeProfit,
+      recommendType
+    };
+
+    // 移除 undefined 欄位，避免覆蓋舊值
+    Object.keys(updateFields).forEach((k) => {
+      if (updateFields[k] === undefined) delete updateFields[k];
+    });
+
+    const updated = await Holding.findOneAndUpdate(
+      { userId, client, code },
+      { $set: updateFields },
+      { new: true }
+    );
+
+    // 若找不到就補一筆（避免前端只打 update 的情況）
+    if (!updated) {
+      const holding = new Holding({
+        userId,
+        client,
+        stockName,
+        code,
+        quantity,
+        cost,
+        stopLoss,
+        takeProfit,
+        recommendType
+      });
+      await holding.save();
+    }
+
+    return res.json({ success: true, message: '更新成功' });
+  } catch (err) {
+    console.error('❌ /api/update_position 錯誤:', err);
+    return res.status(500).json({ success: false, message: '更新失敗' });
+  }
+});
+
+// ======================================================
+// 2.6 刪除持倉 POST /api/delete_position
+// body: { userId, client, code }
+// ======================================================
+app.post('/api/delete_position', async (req, res) => {
+  try {
+    const { userId, client, code } = req.body || {};
+    if (!userId || !client || !code) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'userId、client、code 為必填' });
+    }
+
+    await Holding.deleteOne({ userId, client, code });
+    return res.json({ success: true, message: '刪除成功' });
+  } catch (err) {
+    console.error('❌ /api/delete_position 錯誤:', err);
+    return res.status(500).json({ success: false, message: '刪除失敗' });
   }
 });
 
