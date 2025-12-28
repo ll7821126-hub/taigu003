@@ -9,7 +9,10 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    body { background-color: #f4f6f9; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body {
+      background-color: #f4f6f9;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
     .login-card {
       max-width: 400px;
       margin: 100px auto;
@@ -70,12 +73,9 @@
       align-items:center;
       font-size: 14px;
     }
-    .client-group-body {
-      padding: 8px 12px;
-    }
-    .view-toggle .btn {
-      font-size: 13px;
-    }
+    .client-group-body { padding: 8px 12px; }
+
+    .view-toggle .btn { font-size: 13px; }
   </style>
 </head>
 <body>
@@ -111,12 +111,20 @@
       <div class="d-flex align-items-center gap-2 flex-wrap">
         <input type="text" id="searchInput" class="form-control form-control-sm search-input"
                placeholder="搜尋股票名稱 / 代碼">
+
         <div class="btn-group btn-group-sm view-toggle" role="group" aria-label="View toggle">
           <button type="button" class="btn btn-outline-secondary active" id="btnViewTable"
                   onclick="setViewMode('table')">表格視圖</button>
           <button type="button" class="btn btn-outline-secondary" id="btnViewClient"
                   onclick="setViewMode('client')">依客戶分組</button>
         </div>
+
+        <!-- 自動刷新開關 -->
+        <div class="form-check form-switch ms-1">
+          <input class="form-check-input" type="checkbox" id="autoRefreshSwitch">
+          <label class="form-check-label small" for="autoRefreshSwitch">自動刷新(10秒)</label>
+        </div>
+
         <button onclick="exportCSV()" class="btn btn-outline-secondary btn-sm">📥 匯出 CSV</button>
         <button onclick="fetchData()" class="btn btn-success btn-sm">🔄 刷新數據</button>
         <button onclick="logout()" class="btn btn-outline-danger btn-sm">退出登錄</button>
@@ -167,7 +175,7 @@
       </li>
     </ul>
 
-    <!-- 主要內容：左右分欄 -->
+    <!-- 主內容 -->
     <div class="row">
       <!-- 左：表格 / 客戶視圖 -->
       <div class="col-lg-9 mb-3">
@@ -184,6 +192,7 @@
                       <th>代碼</th>
                       <th class="text-end">持股數</th>
                       <th class="text-end">買入價</th>
+                      <th class="text-end">即時價</th>
                       <th class="text-end">估算市值</th>
                       <th class="text-end">估算盈虧</th>
                       <th>是否推薦</th>
@@ -208,7 +217,7 @@
         </div>
       </div>
 
-      <!-- 右：側邊小總覽 -->
+      <!-- 右：總覽 -->
       <div class="col-lg-3 mb-3">
         <div class="stat-card mb-3">
           <h6 class="mb-2">⚖️ 整體盈虧概況</h6>
@@ -231,27 +240,29 @@
         <div class="stat-card">
           <h6 class="mb-2">💡 小提示</h6>
           <small class="text-muted">
-            ‧ 搜尋框可以輸入股票名稱或代碼<br>
-            ‧ 上方 Tab 可快速切換「推薦飆股」與「非推薦」<br>
-            ‧ 右側統計是以「成本 × 股數」估算，不含手續費、稅費
+            ‧ 勾選「自動刷新」後，每 10 秒更新一次股價與收益率<br>
+            ‧ 搜尋框可輸入股票名稱或代碼<br>
+            ‧ Tab 可切換「推薦飆股」與「非推薦」<br>
+            ‧ 統計用「即時價 × 股數」估算，不含手續費、稅費
           </small>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS (for nav pills style only; not required for our JS) -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    const API_BASE = '/api'; // 相同網域
+    const API_BASE = '/api';
 
-    let allData = [];        // 後端拿回來的全部資料
-    let viewMode = 'table';  // 'table' or 'client'
-    let filterType = 'all';  // 'all' | 'rec' | 'normal'
-    let searchText = '';     // 股票搜尋文字
+    let allData = [];          // 持倉 + 現價
+    let viewMode = 'table';    // 'table' or 'client'
+    let filterType = 'all';    // 'all' | 'rec' | 'normal'
+    let searchText = '';       // 搜尋文字
+    let autoRefreshTimer = null; // 自動刷新計時器
 
-    // 如果已登入，直接顯示儀表板
+    // 已登入則直接進入儀表板
     if (localStorage.getItem('adminToken')) {
       showDashboard();
     }
@@ -295,11 +306,16 @@
 
     function logout() {
       localStorage.removeItem('adminToken');
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+        document.getElementById('autoRefreshSwitch').checked = false;
+      }
       document.getElementById('dashboardSection').style.display = 'none';
       document.getElementById('loginSection').style.display = 'block';
     }
 
-    // 切換視圖模式
+    // 視圖模式
     function setViewMode(mode) {
       viewMode = mode;
       document.getElementById('tableView').style.display = mode === 'table' ? 'block' : 'none';
@@ -311,7 +327,7 @@
       render();
     }
 
-    // 切換推薦篩選
+    // 推薦篩選
     function setFilterType(type) {
       filterType = type;
       document.getElementById('tabAll').classList.toggle('active', type === 'all');
@@ -320,45 +336,87 @@
       render();
     }
 
-    // 搜尋輸入
+    // 搜尋框
     document.getElementById('searchInput').addEventListener('input', (e) => {
       searchText = e.target.value.trim().toLowerCase();
       render();
     });
 
-    // 取得資料
+    // 自動刷新開關
+    document.getElementById('autoRefreshSwitch').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        // 立刻抓一次
+        fetchData();
+        // 每 10 秒自動更新
+        autoRefreshTimer = setInterval(fetchData, 10000);
+      } else {
+        if (autoRefreshTimer) {
+          clearInterval(autoRefreshTimer);
+          autoRefreshTimer = null;
+        }
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    });
+
+    // 抓資料 + 即時股價
     async function fetchData() {
       const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = '<tr><td colspan="10" class="text-center">載入中...</td></tr>';
+      const clientContainer = document.getElementById('clientGroupContainer');
+      tbody.innerHTML = '<tr><td colspan="11" class="text-center">載入中...</td></tr>';
+      clientContainer.innerHTML = '<div class="text-center text-muted">載入中...</div>';
 
       try {
+        // 1. 抓持倉資料
         const res = await fetch(`${API_BASE}/get_data`);
         const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
 
-        if (!Array.isArray(data)) {
-          allData = [];
-        } else {
-          // 排序：時間新到舊
-          allData = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        let tempData = list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // 2. 抓股價
+        const codes = [...new Set(tempData.map(r => r.code).filter(Boolean))];
+
+        if (codes.length > 0) {
+          try {
+            const priceRes = await fetch(`${API_BASE}/prices`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ codes })
+            });
+            const priceMap = await priceRes.json();  // e.g. { '2330': 610, ... }
+
+            tempData = tempData.map(row => {
+              const codeKey = String(row.code || '');
+              const price = priceMap[codeKey];
+              return { ...row, currentPrice: typeof price === 'number' ? price : undefined };
+            });
+          } catch (e) {
+            console.warn('取得即時價格失敗，改用成本價當現價', e);
+          }
         }
+
+        allData = tempData;
 
         document.getElementById('lastFetchTime').textContent =
           '最後刷新：' + new Date().toLocaleString('zh-TW');
 
         render();
       } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">載入失敗</td></tr>';
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-danger">載入失敗</td></tr>';
+        clientContainer.innerHTML = '<div class="text-center text-danger">載入失敗</div>';
       }
     }
 
-    // 依條件過濾資料
+    // 欄位過濾
     function getFilteredData() {
       return allData.filter(row => {
-        // 推薦 / 非推薦篩選
         if (filterType === 'rec' && row.recommendType !== 'yes') return false;
         if (filterType === 'normal' && row.recommendType === 'yes') return false;
 
-        // 搜尋股票
         if (searchText) {
           const name = (row.stockName || '').toLowerCase();
           const code = (row.code || '').toLowerCase();
@@ -368,13 +426,13 @@
       });
     }
 
-    // 統計與畫面重繪
+    // 統計 + 重繪畫面
     function render() {
       const data = getFilteredData();
       const tbody = document.getElementById('tableBody');
       const clientContainer = document.getElementById('clientGroupContainer');
 
-      // ----- 統計 -----
+      // ---- 統計 ----
       let totalCount = data.length;
       let totalQty = 0;
       let totalCostAmount = 0;
@@ -382,20 +440,19 @@
       let recCount = 0;
 
       data.forEach(row => {
-        const qty = Number(row.quantity) || 0;
+        const qty  = Number(row.quantity) || 0;
         const cost = Number(row.cost) || 0;
-        const cur = Number(row.currentPrice ?? row.cost) || 0;
+        const cur  = Number(row.currentPrice ?? row.cost) || 0;
 
-        totalQty += qty;
+        totalQty        += qty;
         totalCostAmount += qty * cost;
-        totalValue += qty * cur;
+        totalValue      += qty * cur;
         if (row.recommendType === 'yes') recCount++;
       });
 
-      // 顯示統計
       document.getElementById('statCount').textContent = totalCount;
-      document.getElementById('statQty').textContent = totalQty.toLocaleString('zh-TW');
-      document.getElementById('statCost').textContent = totalCostAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
+      document.getElementById('statQty').textContent   = totalQty.toLocaleString('zh-TW');
+      document.getElementById('statCost').textContent  = totalCostAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
       document.getElementById('statRecCount').textContent = recCount;
 
       document.getElementById('statValue').textContent = totalValue.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
@@ -418,22 +475,22 @@
         rateEl.className = 'fw-semibold';
       }
 
-      // ----- 表格視圖 -----
+      // ---- 表格視圖 ----
       if (viewMode === 'table') {
         if (!data.length) {
-          tbody.innerHTML = '<tr><td colspan="10" class="text-center">目前沒有符合條件的資料</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="11" class="text-center">目前沒有符合條件的資料</td></tr>';
         } else {
           tbody.innerHTML = '';
           data.forEach(row => {
-            const qty = Number(row.quantity) || 0;
+            const qty  = Number(row.quantity) || 0;
             const cost = Number(row.cost) || 0;
-            const cur = Number(row.currentPrice ?? row.cost) || 0;
+            const cur  = Number(row.currentPrice ?? row.cost) || 0;
             const value = qty * cur;
-            const pnl = qty * (cur - cost);
+            const pnl   = qty * (cur - cost);
+            const rate  = cost > 0 ? (cur - cost) / cost * 100 : 0;
 
-            const rate = cost > 0 ? (cur - cost) / cost * 100 : 0;
             const badgeClass = pnl >= 0 ? 'badge-up' : 'badge-down';
-            const rateStr = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
+            const rateStr    = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -442,14 +499,20 @@
               <td>${row.code || ''}</td>
               <td class="text-end">${qty.toLocaleString('zh-TW')}</td>
               <td class="text-end">${cost || ''}</td>
+              <td class="text-end">${cur || ''}</td>
               <td class="text-end">${value ? value.toLocaleString('zh-TW', { maximumFractionDigits: 0 }) : ''}</td>
               <td class="text-end">
-                ${pnl ? `<span class="badge ${badgeClass}">${(pnl>=0?'+':'') + pnl.toFixed(0)} (${rateStr})</span>` : ''}
+                ${pnl
+                  ? `<span class="badge ${badgeClass}">${(pnl>=0?'+':'') + pnl.toFixed(0)} (${rateStr})</span>`
+                  : ''}
               </td>
-              <td>${row.recommendType === 'yes' ? '<span class="badge bg-primary">推薦</span>' : '<span class="badge bg-secondary">一般</span>'}</td>
+              <td>${row.recommendType === 'yes'
+                    ? '<span class="badge bg-primary">推薦</span>'
+                    : '<span class="badge bg-secondary">一般</span>'}</td>
               <td>${row.createdAt ? new Date(row.createdAt).toLocaleString() : ''}</td>
               <td>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteRow('${row._id}','${row.client}','${row.code}')">刪除</button>
+                <button class="btn btn-sm btn-outline-danger"
+                        onclick="deleteRow('${row._id}','${row.client}','${row.code}')">刪除</button>
               </td>
             `;
             tbody.appendChild(tr);
@@ -457,30 +520,30 @@
         }
       }
 
-      // ----- 客戶分組視圖 -----
+      // ---- 客戶分組視圖 ----
       if (viewMode === 'client') {
         if (!data.length) {
           clientContainer.innerHTML = '<div class="text-center text-muted">目前沒有符合條件的資料</div>';
         } else {
-          // 依 client 分組
           const groups = {};
           data.forEach(r => {
             const key = r.client || '未命名客戶';
             if (!groups[key]) {
               groups[key] = { items: [], cost: 0, value: 0 };
             }
-            const qty = Number(r.quantity) || 0;
+            const qty  = Number(r.quantity) || 0;
             const cost = Number(r.cost) || 0;
-            const cur = Number(r.currentPrice ?? r.cost) || 0;
+            const cur  = Number(r.currentPrice ?? r.cost) || 0;
+
             groups[key].items.push(r);
-            groups[key].cost += qty * cost;
+            groups[key].cost  += qty * cost;
             groups[key].value += qty * cur;
           });
 
           clientContainer.innerHTML = '';
           Object.keys(groups).sort().forEach(name => {
             const g = groups[name];
-            const pnl = g.value - g.cost;
+            const pnl  = g.value - g.cost;
             const rate = g.cost > 0 ? pnl / g.cost * 100 : 0;
             const rateStr = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
             const pnlClass = pnl >= 0 ? 'text-up' : 'text-down';
@@ -506,6 +569,7 @@
                         <th>代碼</th>
                         <th class="text-end">數量</th>
                         <th class="text-end">成本</th>
+                        <th class="text-end">即時價</th>
                         <th class="text-end">估算市值</th>
                         <th class="text-end">盈虧</th>
                         <th>類型</th>
@@ -513,12 +577,12 @@
                     </thead>
                     <tbody>
                       ${g.items.map(r => {
-                        const qty = Number(r.quantity) || 0;
+                        const qty  = Number(r.quantity) || 0;
                         const cost = Number(r.cost) || 0;
-                        const cur = Number(r.currentPrice ?? r.cost) || 0;
+                        const cur  = Number(r.currentPrice ?? r.cost) || 0;
                         const value = qty * cur;
                         const pnlItem = qty * (cur - cost);
-                        const rateItem = cost>0 ? (cur - cost)/cost*100 : 0;
+                        const rateItem = cost > 0 ? (cur - cost) / cost * 100 : 0;
                         const badgeClass = pnlItem >= 0 ? 'badge-up' : 'badge-down';
                         const rateItemStr = (rateItem>=0?'+':'') + rateItem.toFixed(1) + '%';
                         return `
@@ -527,11 +591,16 @@
                             <td>${r.code || ''}</td>
                             <td class="text-end">${qty.toLocaleString('zh-TW')}</td>
                             <td class="text-end">${cost || ''}</td>
+                            <td class="text-end">${cur || ''}</td>
                             <td class="text-end">${value ? value.toLocaleString('zh-TW',{maximumFractionDigits:0}) : ''}</td>
                             <td class="text-end">
-                              ${pnlItem ? `<span class="badge ${badgeClass}">${(pnlItem>=0?'+':'')+pnlItem.toFixed(0)} (${rateItemStr})</span>`:''}
+                              ${pnlItem
+                                ? `<span class="badge ${badgeClass}">${(pnlItem>=0?'+':'')+pnlItem.toFixed(0)} (${rateItemStr})</span>`
+                                : ''}
                             </td>
-                            <td>${r.recommendType === 'yes' ? '<span class="badge bg-primary">推薦</span>' : '<span class="badge bg-secondary">一般</span>'}</td>
+                            <td>${r.recommendType === 'yes'
+                                  ? '<span class="badge bg-primary">推薦</span>'
+                                  : '<span class="badge bg-secondary">一般</span>'}</td>
                           </tr>
                         `;
                       }).join('')}
@@ -546,7 +615,7 @@
       }
     }
 
-    // 刪除單筆資料
+    // 刪除
     async function deleteRow(id, client, code) {
       if (!confirm(`確定要刪除 ${client || ''} / ${code || ''} 這筆持倉嗎？`)) return;
 
@@ -554,13 +623,16 @@
         await fetch(`${API_BASE}/delete_position`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: undefined, client, code }) // userId 後端若必填，可改成固定 admin 或忽略此欄
+          body: JSON.stringify({
+            userId: 'admin_view', // 如後端需要 userId，可在後端特別處理
+            client,
+            code
+          })
         });
       } catch (e) {
-        console.warn('刪除 API 呼叫失敗（admin 視圖仍照前端移除）', e);
+        console.warn('刪除 API 呼叫失敗（前端仍移除）', e);
       }
 
-      // 前端直接移除這筆
       allData = allData.filter(row => row._id !== id);
       render();
     }
@@ -573,13 +645,13 @@
         return;
       }
 
-      let csv = '客戶姓名,股票名稱,代碼,持股數,買入價,估算市值,估算盈虧,是否推薦,提交時間\n';
+      let csv = '客戶姓名,股票名稱,代碼,持股數,買入價,即時價,估算市值,估算盈虧,是否推薦,提交時間\n';
       data.forEach(row => {
-        const qty = Number(row.quantity) || 0;
+        const qty  = Number(row.quantity) || 0;
         const cost = Number(row.cost) || 0;
-        const cur = Number(row.currentPrice ?? row.cost) || 0;
+        const cur  = Number(row.currentPrice ?? row.cost) || 0;
         const value = qty * cur;
-        const pnl = qty * (cur - cost);
+        const pnl   = qty * (cur - cost);
 
         csv += [
           row.client || '',
@@ -587,6 +659,7 @@
           row.code || '',
           qty,
           cost,
+          cur,
           value.toFixed(0),
           pnl.toFixed(0),
           row.recommendType === 'yes' ? '推薦' : '一般',
