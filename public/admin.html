@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>後台管理系統 - Stock Tracker</title>
+
   <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
-    body { background-color: #f4f6f9; }
+    body { background-color: #f4f6f9; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     .login-card {
       max-width: 400px;
       margin: 100px auto;
@@ -17,6 +19,63 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     .dashboard { display: none; padding: 20px; }
+
+    .page-header {
+      padding: 12px 24px;
+      margin-bottom: 16px;
+      border-radius: 10px;
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .stat-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      border: 1px solid #e5e7eb;
+    }
+    .stat-title { font-size: 13px; color: #6b7280; }
+    .stat-value { font-size: 20px; font-weight: 700; }
+
+    .badge-up { background:#fee2e2; color:#b91c1c; }
+    .badge-down { background:#d1fae5; color:#065f46; }
+    .text-up { color:#b91c1c; }
+    .text-down { color:#059669; }
+
+    .tab-pill.nav-pills .nav-link {
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+    }
+    .tab-pill.nav-pills .nav-link.active {
+      background: #111827;
+    }
+
+    .search-input {
+      max-width: 260px;
+    }
+
+    .client-group-card {
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      background:#fff;
+      margin-bottom: 12px;
+    }
+    .client-group-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      background:#f9fafb;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size: 14px;
+    }
+    .client-group-body {
+      padding: 8px 12px;
+    }
+    .view-toggle .btn {
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -43,47 +102,161 @@
 
   <!-- 2. 儀表板（登入後顯示） -->
   <div id="dashboardSection" class="dashboard container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>📊 用戶持倉數據總覽</h2>
-      <button onclick="logout()" class="btn btn-outline-danger">退出登錄</button>
+    <!-- 頂部條 -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-1">📊 用戶持倉數據總覽</h4>
+        <small class="text-muted" id="lastFetchTime"></small>
+      </div>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <input type="text" id="searchInput" class="form-control form-control-sm search-input"
+               placeholder="搜尋股票名稱 / 代碼">
+        <div class="btn-group btn-group-sm view-toggle" role="group" aria-label="View toggle">
+          <button type="button" class="btn btn-outline-secondary active" id="btnViewTable"
+                  onclick="setViewMode('table')">表格視圖</button>
+          <button type="button" class="btn btn-outline-secondary" id="btnViewClient"
+                  onclick="setViewMode('client')">依客戶分組</button>
+        </div>
+        <button onclick="exportCSV()" class="btn btn-outline-secondary btn-sm">📥 匯出 CSV</button>
+        <button onclick="fetchData()" class="btn btn-success btn-sm">🔄 刷新數據</button>
+        <button onclick="logout()" class="btn btn-outline-danger btn-sm">退出登錄</button>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="card-body">
-        <button onclick="fetchData()" class="btn btn-success mb-3">🔄 刷新數據</button>
-        <div class="table-responsive">
-          <table class="table table-hover table-striped">
-            <thead class="table-dark">
-              <tr>
-                <th>客戶姓名</th>
-                <th>股票名稱</th>
-                <th>代碼</th>
-                <th>持股數</th>
-                <th>買入價</th>
-                <th>止損價</th>
-                <th>提交時間</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody">
-              <!-- 資料動態插入 -->
-            </tbody>
-          </table>
+    <!-- 整體統計 -->
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-title">總持倉筆數</div>
+          <div class="stat-value" id="statCount">-</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-title">總持股數量</div>
+          <div class="stat-value" id="statQty">-</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-title">總投入金額</div>
+          <div class="stat-value" id="statCost">-</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-title">推薦飆股檔數</div>
+          <div class="stat-value" id="statRecCount">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- tab：推薦 / 非推薦 -->
+    <ul class="nav nav-pills mb-2 tab-pill" id="typeTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tabAll" data-bs-toggle="pill" type="button"
+                onclick="setFilterType('all')">全部</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tabRec" data-bs-toggle="pill" type="button"
+                onclick="setFilterType('rec')">推薦飆股</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tabNormal" data-bs-toggle="pill" type="button"
+                onclick="setFilterType('normal')">非推薦</button>
+      </li>
+    </ul>
+
+    <!-- 主要內容：左右分欄 -->
+    <div class="row">
+      <!-- 左：表格 / 客戶視圖 -->
+      <div class="col-lg-9 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <!-- 表格視圖 -->
+            <div id="tableView">
+              <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>客戶姓名</th>
+                      <th>股票名稱</th>
+                      <th>代碼</th>
+                      <th class="text-end">持股數</th>
+                      <th class="text-end">買入價</th>
+                      <th class="text-end">估算市值</th>
+                      <th class="text-end">估算盈虧</th>
+                      <th>是否推薦</th>
+                      <th>提交時間</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableBody">
+                    <!-- 資料動態插入 -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 客戶分組視圖 -->
+            <div id="clientView" style="display:none;">
+              <div id="clientGroupContainer">
+                <!-- 客戶群組動態插入 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：側邊小總覽 -->
+      <div class="col-lg-3 mb-3">
+        <div class="stat-card mb-3">
+          <h6 class="mb-2">⚖️ 整體盈虧概況</h6>
+          <div class="d-flex flex-column gap-1">
+            <div class="d-flex justify-content-between">
+              <span class="stat-title">估算總市值</span>
+              <span id="statValue" class="fw-semibold">-</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="stat-title">估算總盈虧</span>
+              <span id="statPnl" class="fw-semibold">-</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="stat-title">整體報酬率</span>
+              <span id="statPnlRate" class="fw-semibold">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <h6 class="mb-2">💡 小提示</h6>
+          <small class="text-muted">
+            ‧ 搜尋框可以輸入股票名稱或代碼<br>
+            ‧ 上方 Tab 可快速切換「推薦飆股」與「非推薦」<br>
+            ‧ 右側統計是以「成本 × 股數」估算，不含手續費、稅費
+          </small>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Bootstrap JS (for nav pills style only; not required for our JS) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
-    // 後端 API 根路徑（Render）
-    const API_BASE = '/api'; // 同網域，寫相對路徑即可
+    const API_BASE = '/api'; // 相同網域
+
+    let allData = [];        // 後端拿回來的全部資料
+    let viewMode = 'table';  // 'table' or 'client'
+    let filterType = 'all';  // 'all' | 'rec' | 'normal'
+    let searchText = '';     // 股票搜尋文字
 
     // 如果已登入，直接顯示儀表板
     if (localStorage.getItem('adminToken')) {
       showDashboard();
     }
 
-    // 登入處理（帳號、密碼固定：admin / Qq112233.）
+    // 登入
     async function handleLogin() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
@@ -126,38 +299,308 @@
       document.getElementById('loginSection').style.display = 'block';
     }
 
-    // 取得資料（根據你原本的 API 路由簡化示意）
+    // 切換視圖模式
+    function setViewMode(mode) {
+      viewMode = mode;
+      document.getElementById('tableView').style.display = mode === 'table' ? 'block' : 'none';
+      document.getElementById('clientView').style.display = mode === 'client' ? 'block' : 'none';
+
+      document.getElementById('btnViewTable').classList.toggle('active', mode === 'table');
+      document.getElementById('btnViewClient').classList.toggle('active', mode === 'client');
+
+      render();
+    }
+
+    // 切換推薦篩選
+    function setFilterType(type) {
+      filterType = type;
+      document.getElementById('tabAll').classList.toggle('active', type === 'all');
+      document.getElementById('tabRec').classList.toggle('active', type === 'rec');
+      document.getElementById('tabNormal').classList.toggle('active', type === 'normal');
+      render();
+    }
+
+    // 搜尋輸入
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchText = e.target.value.trim().toLowerCase();
+      render();
+    });
+
+    // 取得資料
     async function fetchData() {
       const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center">載入中...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center">載入中...</td></tr>';
 
       try {
         const res = await fetch(`${API_BASE}/get_data`);
         const data = await res.json();
 
-        if (!Array.isArray(data) || data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="text-center">目前沒有資料</td></tr>';
-          return;
+        if (!Array.isArray(data)) {
+          allData = [];
+        } else {
+          // 排序：時間新到舊
+          allData = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         }
 
-        tbody.innerHTML = '';
-        data.forEach(row => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${row.client || ''}</td>
-            <td>${row.stockName || ''}</td>
-            <td>${row.code || ''}</td>
-            <td>${row.quantity ?? ''}</td>
-            <td>${row.cost ?? ''}</td>
-            <td>${row.stopLoss ?? ''}</td>
-            <td>${row.createdAt ? new Date(row.createdAt).toLocaleString() : ''}</td>
-            <td><button class="btn btn-sm btn-outline-primary" disabled>查看</button></td>
-          `;
-          tbody.appendChild(tr);
+        document.getElementById('lastFetchTime').textContent =
+          '最後刷新：' + new Date().toLocaleString('zh-TW');
+
+        render();
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">載入失敗</td></tr>';
+      }
+    }
+
+    // 依條件過濾資料
+    function getFilteredData() {
+      return allData.filter(row => {
+        // 推薦 / 非推薦篩選
+        if (filterType === 'rec' && row.recommendType !== 'yes') return false;
+        if (filterType === 'normal' && row.recommendType === 'yes') return false;
+
+        // 搜尋股票
+        if (searchText) {
+          const name = (row.stockName || '').toLowerCase();
+          const code = (row.code || '').toLowerCase();
+          if (!name.includes(searchText) && !code.includes(searchText)) return false;
+        }
+        return true;
+      });
+    }
+
+    // 統計與畫面重繪
+    function render() {
+      const data = getFilteredData();
+      const tbody = document.getElementById('tableBody');
+      const clientContainer = document.getElementById('clientGroupContainer');
+
+      // ----- 統計 -----
+      let totalCount = data.length;
+      let totalQty = 0;
+      let totalCostAmount = 0;
+      let totalValue = 0;
+      let recCount = 0;
+
+      data.forEach(row => {
+        const qty = Number(row.quantity) || 0;
+        const cost = Number(row.cost) || 0;
+        const cur = Number(row.currentPrice ?? row.cost) || 0;
+
+        totalQty += qty;
+        totalCostAmount += qty * cost;
+        totalValue += qty * cur;
+        if (row.recommendType === 'yes') recCount++;
+      });
+
+      // 顯示統計
+      document.getElementById('statCount').textContent = totalCount;
+      document.getElementById('statQty').textContent = totalQty.toLocaleString('zh-TW');
+      document.getElementById('statCost').textContent = totalCostAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
+      document.getElementById('statRecCount').textContent = recCount;
+
+      document.getElementById('statValue').textContent = totalValue.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
+
+      const totalPnl = totalValue - totalCostAmount;
+      const pnlEl = document.getElementById('statPnl');
+      const rateEl = document.getElementById('statPnlRate');
+
+      if (totalCostAmount > 0) {
+        const pnlRate = totalPnl / totalCostAmount * 100;
+        pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + totalPnl.toFixed(0);
+        pnlEl.className = totalPnl >= 0 ? 'fw-semibold text-up' : 'fw-semibold text-down';
+
+        rateEl.textContent = (pnlRate >= 0 ? '+' : '') + pnlRate.toFixed(2) + '%';
+        rateEl.className = pnlRate >= 0 ? 'fw-semibold text-up' : 'fw-semibold text-down';
+      } else {
+        pnlEl.textContent = '-';
+        pnlEl.className = 'fw-semibold';
+        rateEl.textContent = '-';
+        rateEl.className = 'fw-semibold';
+      }
+
+      // ----- 表格視圖 -----
+      if (viewMode === 'table') {
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="10" class="text-center">目前沒有符合條件的資料</td></tr>';
+        } else {
+          tbody.innerHTML = '';
+          data.forEach(row => {
+            const qty = Number(row.quantity) || 0;
+            const cost = Number(row.cost) || 0;
+            const cur = Number(row.currentPrice ?? row.cost) || 0;
+            const value = qty * cur;
+            const pnl = qty * (cur - cost);
+
+            const rate = cost > 0 ? (cur - cost) / cost * 100 : 0;
+            const badgeClass = pnl >= 0 ? 'badge-up' : 'badge-down';
+            const rateStr = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${row.client || ''}</td>
+              <td>${row.stockName || ''}</td>
+              <td>${row.code || ''}</td>
+              <td class="text-end">${qty.toLocaleString('zh-TW')}</td>
+              <td class="text-end">${cost || ''}</td>
+              <td class="text-end">${value ? value.toLocaleString('zh-TW', { maximumFractionDigits: 0 }) : ''}</td>
+              <td class="text-end">
+                ${pnl ? `<span class="badge ${badgeClass}">${(pnl>=0?'+':'') + pnl.toFixed(0)} (${rateStr})</span>` : ''}
+              </td>
+              <td>${row.recommendType === 'yes' ? '<span class="badge bg-primary">推薦</span>' : '<span class="badge bg-secondary">一般</span>'}</td>
+              <td>${row.createdAt ? new Date(row.createdAt).toLocaleString() : ''}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteRow('${row._id}','${row.client}','${row.code}')">刪除</button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      }
+
+      // ----- 客戶分組視圖 -----
+      if (viewMode === 'client') {
+        if (!data.length) {
+          clientContainer.innerHTML = '<div class="text-center text-muted">目前沒有符合條件的資料</div>';
+        } else {
+          // 依 client 分組
+          const groups = {};
+          data.forEach(r => {
+            const key = r.client || '未命名客戶';
+            if (!groups[key]) {
+              groups[key] = { items: [], cost: 0, value: 0 };
+            }
+            const qty = Number(r.quantity) || 0;
+            const cost = Number(r.cost) || 0;
+            const cur = Number(r.currentPrice ?? r.cost) || 0;
+            groups[key].items.push(r);
+            groups[key].cost += qty * cost;
+            groups[key].value += qty * cur;
+          });
+
+          clientContainer.innerHTML = '';
+          Object.keys(groups).sort().forEach(name => {
+            const g = groups[name];
+            const pnl = g.value - g.cost;
+            const rate = g.cost > 0 ? pnl / g.cost * 100 : 0;
+            const rateStr = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
+            const pnlClass = pnl >= 0 ? 'text-up' : 'text-down';
+
+            const card = document.createElement('div');
+            card.className = 'client-group-card';
+            card.innerHTML = `
+              <div class="client-group-header">
+                <div>
+                  <strong>${name}</strong>
+                  <span class="ms-2 text-muted">共 ${g.items.length} 檔</span>
+                </div>
+                <div class="${pnlClass} fw-semibold">
+                  ${pnl >= 0 ? '+' : ''}${pnl.toFixed(0)} (${rateStr})
+                </div>
+              </div>
+              <div class="client-group-body">
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0 align-middle">
+                    <thead>
+                      <tr>
+                        <th>股票</th>
+                        <th>代碼</th>
+                        <th class="text-end">數量</th>
+                        <th class="text-end">成本</th>
+                        <th class="text-end">估算市值</th>
+                        <th class="text-end">盈虧</th>
+                        <th>類型</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${g.items.map(r => {
+                        const qty = Number(r.quantity) || 0;
+                        const cost = Number(r.cost) || 0;
+                        const cur = Number(r.currentPrice ?? r.cost) || 0;
+                        const value = qty * cur;
+                        const pnlItem = qty * (cur - cost);
+                        const rateItem = cost>0 ? (cur - cost)/cost*100 : 0;
+                        const badgeClass = pnlItem >= 0 ? 'badge-up' : 'badge-down';
+                        const rateItemStr = (rateItem>=0?'+':'') + rateItem.toFixed(1) + '%';
+                        return `
+                          <tr>
+                            <td>${r.stockName || ''}</td>
+                            <td>${r.code || ''}</td>
+                            <td class="text-end">${qty.toLocaleString('zh-TW')}</td>
+                            <td class="text-end">${cost || ''}</td>
+                            <td class="text-end">${value ? value.toLocaleString('zh-TW',{maximumFractionDigits:0}) : ''}</td>
+                            <td class="text-end">
+                              ${pnlItem ? `<span class="badge ${badgeClass}">${(pnlItem>=0?'+':'')+pnlItem.toFixed(0)} (${rateItemStr})</span>`:''}
+                            </td>
+                            <td>${r.recommendType === 'yes' ? '<span class="badge bg-primary">推薦</span>' : '<span class="badge bg-secondary">一般</span>'}</td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            `;
+            clientContainer.appendChild(card);
+          });
+        }
+      }
+    }
+
+    // 刪除單筆資料
+    async function deleteRow(id, client, code) {
+      if (!confirm(`確定要刪除 ${client || ''} / ${code || ''} 這筆持倉嗎？`)) return;
+
+      try {
+        await fetch(`${API_BASE}/delete_position`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: undefined, client, code }) // userId 後端若必填，可改成固定 admin 或忽略此欄
         });
       } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">載入失敗</td></tr>';
+        console.warn('刪除 API 呼叫失敗（admin 視圖仍照前端移除）', e);
       }
+
+      // 前端直接移除這筆
+      allData = allData.filter(row => row._id !== id);
+      render();
+    }
+
+    // 匯出 CSV
+    function exportCSV() {
+      const data = getFilteredData();
+      if (!data.length) {
+        alert('目前沒有可匯出的資料');
+        return;
+      }
+
+      let csv = '客戶姓名,股票名稱,代碼,持股數,買入價,估算市值,估算盈虧,是否推薦,提交時間\n';
+      data.forEach(row => {
+        const qty = Number(row.quantity) || 0;
+        const cost = Number(row.cost) || 0;
+        const cur = Number(row.currentPrice ?? row.cost) || 0;
+        const value = qty * cur;
+        const pnl = qty * (cur - cost);
+
+        csv += [
+          row.client || '',
+          row.stockName || '',
+          row.code || '',
+          qty,
+          cost,
+          value.toFixed(0),
+          pnl.toFixed(0),
+          row.recommendType === 'yes' ? '推薦' : '一般',
+          row.createdAt ? new Date(row.createdAt).toLocaleString() : ''
+        ].join(',') + '\n';
+      });
+
+      const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '持倉總表.csv';
+      a.click();
+      URL.revokeObjectURL(url);
     }
   </script>
 </body>
