@@ -10,76 +10,62 @@
 
   <style>
     body {
-      background-color: #0f172a;
+      background-color: #f3f4f6;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: #111827;
     }
+
+    /* 登入卡片 */
     .login-card {
       max-width: 400px;
       margin: 120px auto;
-      padding: 30px;
-      background: #020617;
+      padding: 32px 28px;
+      background: #ffffff;
       border-radius: 18px;
-      box-shadow: 0 24px 60px rgba(15,23,42,0.8);
-      border: 1px solid rgba(148,163,184,0.4);
-      color:#e5e7eb;
+      box-shadow: 0 16px 40px rgba(15,23,42,0.18);
+      border: 1px solid #e5e7eb;
     }
-    .login-card h3 {font-weight:800;}
-    .login-card .form-label{font-size:13px;color:#9ca3af;}
+    .login-card h3 {font-weight:800;color:#111827;}
+    .login-card .form-label{font-size:13px;color:#6b7280;}
     .login-card .form-control{
-      background:#020617;
       border-radius:999px;
-      border:1px solid #1f2937;
-      color:#e5e7eb;
       font-size:14px;
-    }
-    .login-card .form-control:focus{
-      border-color:#22c55e;
-      box-shadow:0 0 0 1px rgba(34,197,94,.6);
-      background:#020617;
-      color:#e5e7eb;
     }
     .login-card .btn-primary{
       border-radius:999px;
-      background:linear-gradient(135deg,#22c55e,#4ade80);
-      border:none;
       font-weight:700;
-      box-shadow:0 10px 30px rgba(34,197,94,.45);
-    }
-    .login-card .btn-primary:hover{
-      filter:brightness(1.05);
-      transform:translateY(-1px);
     }
 
     .dashboard { display: none; padding: 18px; }
 
+    /* 頂部條 */
     .page-header {
-      padding: 16px 22px;
+      padding: 14px 22px;
       margin-bottom: 14px;
-      border-radius: 18px;
-      background: radial-gradient(circle at top left,#1f2937,#020617 60%);
-      box-shadow: 0 20px 35px rgba(15,23,42,0.7);
-      border: 1px solid rgba(148,163,184,0.45);
-      color:#e5e7eb;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 10px 25px rgba(15,23,42,0.08);
+      border: 1px solid #e5e7eb;
     }
     .page-title {
-      font-size:20px;
-      font-weight:800;
+      font-size: 20px;
+      font-weight: 800;
       display:flex;
       align-items:center;
       gap:10px;
+      color:#111827;
     }
     .page-subtitle {
-      font-size:12px;
-      color:#9ca3af;
+      font-size: 12px;
+      color: #6b7280;
     }
     .pill {
       padding:4px 10px;
       border-radius:999px;
-      background:rgba(15,23,42,0.8);
-      border:1px solid rgba(148,163,184,0.4);
+      background:#eff6ff;
+      border:1px solid #bfdbfe;
       font-size:11px;
-      color:#e5e7eb;
+      color:#1d4ed8;
     }
     .header-right .btn {
       border-radius:999px;
@@ -92,125 +78,48 @@
       gap:6px;
     }
 
+    /* 統計卡片 */
     .stat-card {
-      background: linear-gradient(135deg, #020617, #020617);
-      border-radius: 16px;
+      background: #ffffff;
+      border-radius: 14px;
       padding: 14px 16px;
-      box-shadow: 0 12px 22px rgba(15,23,42,0.7);
-      border: 1px solid rgba(148,163,184,0.35);
-      color:#e5e7eb;
+      box-shadow: 0 8px 18px rgba(15,23,42,0.05);
+      border: 1px solid #e5e7eb;
     }
-    .stat-title { font-size:12px; color:#9ca3af; }
-    .stat-value { font-size:20px; font-weight:800; }
+    .stat-title { font-size:12px; color:#6b7280; }
+    .stat-value { font-size:20px; font-weight:800; color:#111827;}
 
-    .badge-up { background:#fee2e2; color:#b91c1c; }
-    .badge-down { background:#d1fae5; color:#065f46; }
-    .text-up { color:#fecaca; }
-    .text-down { color:#6ee7b7; }
+    .badge-up { background:#dcfce7; color:#166534; }
+    .badge-down { background:#fee2e2; color:#b91c1c; }
+    .text-up { color:#16a34a; }
+    .text-down { color:#b91c1c; }
 
+    /* Tab */
     .tab-pill.nav-pills .nav-link {
       border-radius: 999px;
       padding: 5px 14px;
       font-size: 12px;
-      color:#9ca3af;
+      color:#6b7280;
       border:1px solid transparent;
     }
     .tab-pill.nav-pills .nav-link:hover{
-      border-color:rgba(148,163,184,0.5);
+      background:#f3f4f6;
     }
     .tab-pill.nav-pills .nav-link.active {
-      background: linear-gradient(135deg,#22c55e,#16a34a);
-      color:#ecfdf5;
-      border:none;
+      background: #111827;
+      color:#f9fafb;
+      border-color:#111827;
     }
 
-    .search-input { max-width: 260px; }
-
+    /* 主卡片（表格） */
     .card-main {
-      background: #020617;
-      border-radius:18px;
-      box-shadow:0 18px 30px rgba(15,23,42,0.9);
-      border:1px solid rgba(148,163,184,0.4);
+      background: #ffffff;
+      border-radius:16px;
+      box-shadow: 0 12px 28px rgba(15,23,42,0.06);
+      border: 1px solid #e5e7eb;
     }
 
-    .client-group-card {
-      border-radius: 14px;
-      border: 1px solid rgba(148,163,184,0.35);
-      background: radial-gradient(circle at top left,#020617,#020617 65%);
-      margin-bottom: 10px;
-      color:#e5e7eb;
-    }
-    .client-group-header {
-      padding: 8px 12px;
-      border-bottom: 1px solid rgba(148,163,184,0.35);
-      background: radial-gradient(circle at top left,#111827,#020617 70%);
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      font-size: 13px;
-    }
-    .client-group-body { padding: 8px 10px; }
-    .view-toggle .btn {
-      font-size: 12px;
-      border-radius:999px;
-    }
-
-    .client-link {
-      cursor: pointer;
-      color: #38bdf8;
-      text-decoration: underline;
-      font-weight:600;
-    }
-    .client-link:hover {
-      color: #0ea5e9;
-    }
-
-    .table-dark {
-      background:linear-gradient(90deg,#020617,#020617);
-      color:#9ca3af;
-      border-bottom:1px solid rgba(148,163,184,0.4);
-    }
-    .table-dark th{
-      border-bottom-color:rgba(148,163,184,0.4)!important;
-      font-size:11px;
-      letter-spacing:0.03em;
-    }
-    .table-hover tbody tr:hover{
-      background-color:rgba(15,23,42,0.85);
-    }
-    .table-striped>tbody>tr:nth-of-type(odd)>*{
-      background-color:#020617;
-    }
-    .table-striped>tbody>tr:nth-of-type(even)>*{
-      background-color:#020617;
-    }
-    tbody td{
-      border-bottom:1px solid rgba(31,41,55,0.8)!important;
-      color:#e5e7eb;
-      font-size:12px;
-    }
-
-    .side-summary .stat-card{
-      background:radial-gradient(circle at top left,#020617,#020617 70%);
-    }
-
-    .form-select, .form-control{
-      background:#020617;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,0.5);
-      color:#e5e7eb;
-      font-size:12px;
-    }
-    .form-select:focus, .form-control:focus{
-      background:#020617;
-      color:#e5e7eb;
-      border-color:#22c55e;
-      box-shadow:0 0 0 1px rgba(34,197,94,.6);
-    }
-    .form-check-input{
-      cursor:pointer;
-    }
-
+    /* 搜尋 + 排序 */
     .toolbar-row{
       display:flex;
       justify-content:space-between;
@@ -228,34 +137,58 @@
       align-items:center;
       gap:8px;
     }
-
     .mini-label{
       font-size:11px;
-      color:#9ca3af;
+      color:#6b7280;
       margin-right:4px;
     }
+    .search-input { max-width: 260px; }
 
-    .modal-content{
-      background:#020617;
+    .form-select, .form-control{
+      font-size:12px;
+    }
+
+    /* 表格 */
+    .table-dark {
+      background:#111827;
       color:#e5e7eb;
-      border-radius:18px;
-      border:1px solid rgba(148,163,184,0.6);
     }
-    .modal-header{
-      border-bottom-color:rgba(31,41,55,0.9);
+    .table-dark th{
+      border-bottom-color:#1f2937!important;
+      font-size:11px;
+      letter-spacing:0.03em;
     }
-    .modal-footer{
-      border-top-color:rgba(31,41,55,0.9);
+    tbody td{
+      border-bottom:1px solid #e5e7eb!important;
+      font-size:12px;
+      color:#374151;
+    }
+    .table-hover tbody tr:hover{
+      background-color:#f9fafb;
+    }
+
+    /* 客戶姓名可點擊 */
+    .client-link {
+      cursor: pointer;
+      color: #2563eb;
+      text-decoration: underline;
+      font-weight:600;
+    }
+    .client-link:hover {
+      color: #1d4ed8;
+    }
+
+    .small-muted{font-size:11px;color:#6b7280;}
+
+    /* Modal */
+    .modal-content{
+      border-radius:16px;
+      background:#ffffff;
+      color:#111827;
     }
     .modal-title{font-weight:800;}
 
-    .badge.bg-primary{
-      background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
-    }
-    .badge.bg-secondary{
-      background:#4b5563!important;
-    }
-
+    /* 小按鈕 */
     .btn-outline-secondary.btn-sm,
     .btn-success.btn-sm,
     .btn-outline-danger.btn-sm{
@@ -263,31 +196,15 @@
       font-size:11px;
       padding:5px 12px;
     }
-    .btn-outline-secondary.btn-sm{
-      border-color:#4b5563;
-      color:#e5e7eb;
-      background:#020617;
-    }
-    .btn-outline-secondary.btn-sm:hover{
-      background:#111827;
-    }
-    .btn-success.btn-sm{
-      background:linear-gradient(135deg,#22c55e,#16a34a);
-      border:none;
-    }
-    .btn-success.btn-sm:hover{
-      filter:brightness(1.05);
-    }
-    .btn-outline-danger.btn-sm{
-      border-color:#ef4444;
-      color:#fecaca;
-      background:#020617;
-    }
-    .btn-outline-danger.btn-sm:hover{
-      background:#7f1d1d;
-    }
 
-    .small-muted{font-size:11px;color:#9ca3af;}
+    .tag-pill{
+      border-radius:999px;
+      font-size:11px;
+      padding:2px 8px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+      margin-right:4px;
+    }
   </style>
 </head>
 <body>
@@ -322,7 +239,7 @@
           <span class="pill">Admin Console</span>
         </div>
         <div class="page-subtitle">
-          即時檢視所有客戶的持股、收益與風險狀態
+          以「客戶」為中心，彙總檢視所有持股與風險狀態
         </div>
         <div id="lastFetchTime" class="small-muted mt-1"></div>
       </div>
@@ -330,7 +247,7 @@
       <div class="header-right d-flex align-items-center gap-2 flex-wrap">
         <div class="form-check form-switch text-nowrap">
           <input class="form-check-input" type="checkbox" id="autoRefreshSwitch">
-          <label class="form-check-label small text-light" for="autoRefreshSwitch">自動刷新 (10 秒)</label>
+          <label class="form-check-label small" for="autoRefreshSwitch">自動刷新 (10 秒)</label>
         </div>
         <button onclick="exportCSV()" class="btn btn-outline-secondary btn-sm btn-icon">
           <span>📥 匯出 CSV</span>
@@ -345,11 +262,17 @@
     </div>
 
     <!-- 整體統計 -->
-    <div class="row g-3 mb-3 side-summary">
+    <div class="row g-3 mb-3">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-title">客戶總數</div>
+          <div class="stat-value" id="statClientCount">-</div>
+        </div>
+      </div>
       <div class="col-6 col-md-3">
         <div class="stat-card">
           <div class="stat-title">總持倉筆數</div>
-          <div class="stat-value" id="statCount">-</div>
+          <div class="stat-value" id="statHoldingCount">-</div>
         </div>
       </div>
       <div class="col-6 col-md-3">
@@ -360,31 +283,25 @@
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-card">
-          <div class="stat-title">總投入金額</div>
-          <div class="stat-value" id="statCost">-</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="stat-card">
-          <div class="stat-title">推薦飆股檔數</div>
-          <div class="stat-value" id="statRecCount">-</div>
+          <div class="stat-title">推薦飆股客戶數</div>
+          <div class="stat-value" id="statRecClientCount">-</div>
         </div>
       </div>
     </div>
 
-    <!-- tab -->
+    <!-- 類型篩選 -->
     <ul class="nav nav-pills mb-2 tab-pill" id="typeTab" role="tablist">
       <li class="nav-item" role="presentation">
         <button class="nav-link active" id="tabAll" data-bs-toggle="pill" type="button"
-                onclick="setFilterType('all')">全部</button>
+                onclick="setFilterType('all')">全部客戶</button>
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="tabRec" data-bs-toggle="pill" type="button"
-                onclick="setFilterType('rec')">推薦飆股</button>
+                onclick="setFilterType('rec')">有推薦飆股</button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tabNormal" data-bs-toggle="pill" type="button"
-                onclick="setFilterType('normal')">一般持股</button>
+        <button class="nav-link" id="tabRisk" data-bs-toggle="pill" type="button"
+                onclick="setFilterType('loss')">整體虧損中</button>
       </li>
     </ul>
 
@@ -394,52 +311,44 @@
         <div class="card card-main">
           <div class="card-body">
 
-            <!-- 工具列：搜尋 + 排序 (已移到表格上方) -->
+            <!-- 工具列：搜尋 + 排序 -->
             <div class="toolbar-row">
               <div class="toolbar-left">
-                <span class="mini-label">篩選</span>
+                <span class="mini-label">搜尋客戶 / 股票</span>
                 <input type="text" id="searchInput"
                        class="form-control form-control-sm search-input"
-                       placeholder="搜尋股票名稱 / 代碼">
+                       placeholder="輸入客戶姓名或股票名稱/代碼">
               </div>
               <div class="toolbar-right">
                 <span class="mini-label">排序</span>
-                <select id="sortSelect" class="form-select form-select-sm" style="min-width: 190px;">
-                  <option value="time_desc">按提交時間（新 → 舊）</option>
-                  <option value="value_desc">按估算市值（大 → 小）</option>
-                  <option value="value_asc">按估算市值（小 → 大）</option>
+                <select id="sortSelect" class="form-select form-select-sm" style="min-width: 210px;">
+                  <option value="value_desc">按客戶總市值（大 → 小）</option>
+                  <option value="value_asc">按客戶總市值（小 → 大）</option>
+                  <option value="pnl_desc">按整體盈虧（高 → 低）</option>
+                  <option value="pnl_asc">按整體盈虧（低 → 高）</option>
+                  <option value="time_desc">按最新提交時間</option>
                 </select>
               </div>
             </div>
 
-            <!-- 視圖切換 -->
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <div class="small-muted">左方為全部持倉列表，可點客戶姓名查看客戶檔案與損益細節。</div>
-              <div class="btn-group btn-group-sm view-toggle" role="group" aria-label="View toggle">
-                <button type="button" class="btn btn-outline-secondary active" id="btnViewTable"
-                        onclick="setViewMode('table')">表格視圖</button>
-                <button type="button" class="btn btn-outline-secondary" id="btnViewClient"
-                        onclick="setViewMode('client')">依客戶分組</button>
-              </div>
+            <div class="small-muted mb-2">
+              每列代表「一位客戶」的整體持倉，點客戶姓名可展開所有股票與完整檔案。
             </div>
 
-            <!-- 表格視圖 -->
+            <!-- 表格視圖：已合併為「客戶」 -->
             <div id="tableView">
               <div class="table-responsive">
                 <table class="table table-hover table-striped align-middle mb-0">
                   <thead class="table-dark">
                     <tr>
-                      <th>客戶姓名</th>
-                      <th>股票名稱</th>
-                      <th>代碼</th>
-                      <th class="text-end">持股數</th>
-                      <th class="text-end">買入價</th>
-                      <th class="text-end">即時價</th>
-                      <th class="text-end">估算市值</th>
-                      <th class="text-end">估算盈虧</th>
-                      <th>是否推薦</th>
-                      <th>提交時間</th>
-                      <th>操作</th>
+                      <th style="width:18%;">客戶姓名</th>
+                      <th>持有股票概況</th>
+                      <th class="text-end" style="width:10%;">股票檔數</th>
+                      <th class="text-end" style="width:12%;">總持股數</th>
+                      <th class="text-end" style="width:14%;">總市值</th>
+                      <th class="text-end" style="width:14%;">整體盈虧</th>
+                      <th class="text-end" style="width:10%;">報酬率</th>
+                      <th style="width:12%;">狀態</th>
                     </tr>
                   </thead>
                   <tbody id="tableBody"></tbody>
@@ -447,10 +356,6 @@
               </div>
             </div>
 
-            <!-- 客戶分組視圖 -->
-            <div id="clientView" style="display:none;">
-              <div id="clientGroupContainer"></div>
-            </div>
           </div>
         </div>
       </div>
@@ -458,7 +363,7 @@
       <!-- 右側總覽 -->
       <div class="col-lg-3 mb-3">
         <div class="stat-card mb-3">
-          <h6 class="mb-2"⚖️ 整體盈虧概況</h6>
+          <h6 class="mb-2">⚖️ 目前整體盈虧</h6>
           <div class="d-flex flex-column gap-1">
             <div class="d-flex justify-content-between">
               <span class="stat-title">估算總市值</span>
@@ -476,11 +381,11 @@
         </div>
 
         <div class="stat-card">
-          <h6 class="mb-2">💡 操作提示</h6>
-          <small class="text-muted small-muted">
-            ‧ 點「客戶姓名」可查看完整客戶檔案與持倉資料<br>
-            ‧ 排序選單可按估算市值或時間排序股票列表<br>
-            ‧ 開啟自動刷新後，系統每 10 秒更新即時股價與統計數字
+          <h6 class="mb-2">💡 使用提示</h6>
+          <small class="small-muted">
+            ‧ 每一列是「客戶彙總」，點客戶姓名可展開該客戶所有持股與檔案<br>
+            ‧ 「有推薦飆股」篩選只顯示至少持有一檔推薦飆股的客戶<br>
+            ‧ 「整體虧損中」方便你優先關注風險較高客戶
           </small>
         </div>
       </div>
@@ -511,17 +416,19 @@
   <script>
     const API_BASE = '/api';
 
-    let allData = [];
-    let viewMode = 'table';
+    let allHoldings = [];        // 後端原始每筆持倉
+    let groupByClient = [];      // 依客戶合併後的陣列
     let filterType = 'all';
     let searchText = '';
+    let sortMode = 'value_desc';
     let autoRefreshTimer = null;
-    let sortMode = 'time_desc';
 
+    // 若已有登入 token，直接顯示後台
     if (localStorage.getItem('adminToken')) {
       showDashboard();
     }
 
+    // ---------------- 登入 / 登出 ----------------
     async function handleLogin() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
@@ -569,22 +476,12 @@
       document.getElementById('loginSection').style.display = 'block';
     }
 
-    function setViewMode(mode) {
-      viewMode = mode;
-      document.getElementById('tableView').style.display = mode === 'table' ? 'block' : 'none';
-      document.getElementById('clientView').style.display = mode === 'client' ? 'block' : 'none';
-
-      document.getElementById('btnViewTable').classList.toggle('active', mode === 'table');
-      document.getElementById('btnViewClient').classList.toggle('active', mode === 'client');
-
-      render();
-    }
-
+    // ---------------- 篩選 / 搜尋 / 排序 ----------------
     function setFilterType(type) {
       filterType = type;
       document.getElementById('tabAll').classList.toggle('active', type === 'all');
       document.getElementById('tabRec').classList.toggle('active', type === 'rec');
-      document.getElementById('tabNormal').classList.toggle('active', type === 'normal');
+      document.getElementById('tabRisk').classList.toggle('active', type === 'loss');
       render();
     }
 
@@ -614,21 +511,20 @@
       if (autoRefreshTimer) clearInterval(autoRefreshTimer);
     });
 
+    // ---------------- 取得資料 + 即時價 ----------------
     async function fetchData() {
       const tbody = document.getElementById('tableBody');
-      const clientContainer = document.getElementById('clientGroupContainer');
-      tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">載入中...</td></tr>';
-      clientContainer.innerHTML = '<div class="text-center text-muted">載入中...</div>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">載入中...</td></tr>';
 
       try {
         const res = await fetch(`${API_BASE}/get_data`);
         const data = await res.json();
         const list = Array.isArray(data) ? data : [];
 
-        let tempData = list;
+        allHoldings = list;
 
-        const codes = [...new Set(tempData.map(r => r.code).filter(Boolean))];
-
+        // 蒐集所有股票代碼，查即時價
+        const codes = [...new Set(allHoldings.map(r => r.code).filter(Boolean))];
         if (codes.length > 0) {
           try {
             const priceRes = await fetch(`${API_BASE}/prices`, {
@@ -637,8 +533,7 @@
               body: JSON.stringify({ codes })
             });
             const priceMap = await priceRes.json();
-
-            tempData = tempData.map(row => {
+            allHoldings = allHoldings.map(row => {
               const codeKey = String(row.code || '');
               const price = priceMap[codeKey];
               return { ...row, currentPrice: typeof price === 'number' ? price : undefined };
@@ -648,94 +543,137 @@
           }
         }
 
-        allData = tempData;
-
         document.getElementById('lastFetchTime').textContent =
           '最後刷新：' + new Date().toLocaleString('zh-TW');
 
+        buildClientGroups();
         render();
       } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-danger">載入失敗</td></tr>';
-        clientContainer.innerHTML = '<div class="text-center text-danger">載入失敗</div>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">載入失敗</td></tr>';
       }
     }
 
-    function getFilteredAndSortedData() {
-      let data = allData.filter(row => {
-        if (filterType === 'rec' && row.recommendType !== 'yes') return false;
-        if (filterType === 'normal' && row.recommendType === 'yes') return false;
+    // ---------------- 依客戶合併 ----------------
+    function buildClientGroups() {
+      const map = {};
 
-        if (searchText) {
-          const name = (row.stockName || '').toLowerCase();
-          const code = (row.code || '').toLowerCase();
-          if (!name.includes(searchText) && !code.includes(searchText)) return false;
+      allHoldings.forEach(row => {
+        const client = row.client || '未命名客戶';
+        const qty  = Number(row.quantity) || 0;
+        const cost = Number(row.cost) || 0;
+        const cur  = Number(row.currentPrice ?? row.cost) || 0;
+        const value = qty * cur;
+
+        if (!map[client]) {
+          map[client] = {
+            client,
+            holdings: [],
+            totalQty: 0,
+            totalCost: 0,
+            totalValue: 0,
+            hasRecommend: false,
+            latestTime: row.createdAt ? new Date(row.createdAt) : new Date(0)
+          };
+        }
+
+        map[client].holdings.push(row);
+        map[client].totalQty += qty;
+        map[client].totalCost += qty * cost;
+        map[client].totalValue += value;
+        if (row.recommendType === 'yes') map[client].hasRecommend = true;
+        if (row.createdAt && new Date(row.createdAt) > map[client].latestTime) {
+          map[client].latestTime = new Date(row.createdAt);
+        }
+      });
+
+      groupByClient = Object.values(map);
+    }
+
+    // ---------------- 套用篩選 / 排序 ----------------
+    function getFilteredAndSortedGroups() {
+      let groups = [...groupByClient];
+
+      // 搜尋（客戶 or 股票）
+      if (searchText) {
+        groups = groups.filter(g => {
+          const name = (g.client || '').toLowerCase();
+          if (name.includes(searchText)) return true;
+          // 股票名稱 / 代碼
+          return g.holdings.some(h => {
+            const n = (h.stockName || '').toLowerCase();
+            const c = (h.code || '').toLowerCase();
+            return n.includes(searchText) || c.includes(searchText);
+          });
+        });
+      }
+
+      // 類型篩選
+      groups = groups.filter(g => {
+        const pnl = g.totalValue - g.totalCost;
+        if (filterType === 'rec') {
+          return g.hasRecommend;
+        }
+        if (filterType === 'loss') {
+          return pnl < 0;
         }
         return true;
       });
 
-      data.sort((a, b) => {
-        const qtyA = Number(a.quantity) || 0;
-        const costA = Number(a.cost) || 0;
-        const curA  = Number(a.currentPrice ?? a.cost) || 0;
-        const valueA = qtyA * curA;
+      // 排序
+      groups.sort((a, b) => {
+        const pnlA = a.totalValue - a.totalCost;
+        const pnlB = b.totalValue - b.totalCost;
 
-        const qtyB = Number(b.quantity) || 0;
-        const costB = Number(b.cost) || 0;
-        const curB  = Number(b.currentPrice ?? b.cost) || 0;
-        const valueB = qtyB * curB;
-
-        if (sortMode === 'value_desc') {
-          return valueB - valueA;
-        } else if (sortMode === 'value_asc') {
-          return valueA - valueB;
-        } else {
-          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-        }
+        if (sortMode === 'value_desc') return b.totalValue - a.totalValue;
+        if (sortMode === 'value_asc') return a.totalValue - b.totalValue;
+        if (sortMode === 'pnl_desc') return pnlB - pnlA;
+        if (sortMode === 'pnl_asc') return pnlA - pnlB;
+        if (sortMode === 'time_desc') return b.latestTime - a.latestTime;
+        return 0;
       });
 
-      return data;
+      return groups;
     }
 
+    // ---------------- 畫面渲染 ----------------
     function render() {
-      const data = getFilteredAndSortedData();
+      const groups = getFilteredAndSortedGroups();
       const tbody = document.getElementById('tableBody');
-      const clientContainer = document.getElementById('clientGroupContainer');
 
-      let totalCount = data.length;
+      // 整體統計
+      let clientCount = groupByClient.length;
+      let holdingCount = allHoldings.length;
       let totalQty = 0;
-      let totalCostAmount = 0;
+      let totalCost = 0;
       let totalValue = 0;
-      let recCount = 0;
+      let recClientCount = 0;
 
-      data.forEach(row => {
-        const qty  = Number(row.quantity) || 0;
-        const cost = Number(row.cost) || 0;
-        const cur  = Number(row.currentPrice ?? row.cost) || 0;
-
-        totalQty        += qty;
-        totalCostAmount += qty * cost;
-        totalValue      += qty * cur;
-        if (row.recommendType === 'yes') recCount++;
+      groupByClient.forEach(g => {
+        totalQty += g.totalQty;
+        totalCost += g.totalCost;
+        totalValue += g.totalValue;
+        if (g.hasRecommend) recClientCount++;
       });
 
-      document.getElementById('statCount').textContent = totalCount;
-      document.getElementById('statQty').textContent   = totalQty.toLocaleString('zh-TW');
-      document.getElementById('statCost').textContent  = totalCostAmount.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
-      document.getElementById('statRecCount').textContent = recCount;
-      document.getElementById('statValue').textContent = totalValue.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
+      document.getElementById('statClientCount').textContent = clientCount;
+      document.getElementById('statHoldingCount').textContent = holdingCount;
+      document.getElementById('statQty').textContent = totalQty.toLocaleString('zh-TW');
+      document.getElementById('statRecClientCount').textContent = recClientCount;
+      document.getElementById('statValue').textContent =
+        totalValue.toLocaleString('zh-TW', { maximumFractionDigits: 0 });
 
-      const totalPnl = totalValue - totalCostAmount;
+      const totalPnl = totalValue - totalCost;
       const pnlEl = document.getElementById('statPnl');
       const rateEl = document.getElementById('statPnlRate');
 
-      if (totalCostAmount > 0) {
-        const pnlRate = totalPnl / totalCostAmount * 100;
+      if (totalCost > 0) {
+        const pnlRate = totalPnl / totalCost * 100;
         pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + totalPnl.toFixed(0);
-        pnlEl.className = totalPnl >= 0 ? 'fw-semibold text-up' : 'fw-semibold text-down';
+        pnlEl.className = 'fw-semibold ' + (totalPnl >= 0 ? 'text-up' : 'text-down');
 
         rateEl.textContent = (pnlRate >= 0 ? '+' : '') + pnlRate.toFixed(2) + '%';
-        rateEl.className = pnlRate >= 0 ? 'fw-semibold text-up' : 'fw-semibold text-down';
+        rateEl.className = 'fw-semibold ' + (pnlRate >= 0 ? 'text-up' : 'text-down');
       } else {
         pnlEl.textContent = '-';
         pnlEl.className = 'fw-semibold';
@@ -743,167 +681,87 @@
         rateEl.className = 'fw-semibold';
       }
 
-      if (viewMode === 'table') {
-        if (!data.length) {
-          tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">目前沒有符合條件的資料</td></tr>';
-        } else {
-          tbody.innerHTML = '';
-          data.forEach(row => {
-            const qty  = Number(row.quantity) || 0;
-            const cost = Number(row.cost) || 0;
-            const cur  = Number(row.currentPrice ?? row.cost) || 0;
-            const value = qty * cur;
-            const pnl   = qty * (cur - cost);
-            const rate  = cost > 0 ? (cur - cost) / cost * 100 : 0;
-
-            const badgeClass = pnl >= 0 ? 'badge-up' : 'badge-down';
-            const rateStr    = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>
-                <span class="client-link"
-                      onclick='showClientDetail(${JSON.stringify(row).replace(/'/g,"&#39;")})'>
-                  ${row.client || ''}
-                </span>
-              </td>
-              <td>${row.stockName || ''}</td>
-              <td>${row.code || ''}</td>
-              <td class="text-end">${qty.toLocaleString('zh-TW')}</td>
-              <td class="text-end">${cost || ''}</td>
-              <td class="text-end">${cur || ''}</td>
-              <td class="text-end">${value ? value.toLocaleString('zh-TW', { maximumFractionDigits: 0 }) : ''}</td>
-              <td class="text-end">
-                ${pnl
-                  ? `<span class="badge ${badgeClass}">${(pnl>=0?'+':'') + pnl.toFixed(0)} (${rateStr})</span>`
-                  : ''}
-              </td>
-              <td>${row.recommendType === 'yes'
-                    ? '<span class="badge bg-primary">推薦</span>'
-                    : '<span class="badge bg-secondary">一般</span>'}</td>
-              <td>${row.createdAt ? new Date(row.createdAt).toLocaleString() : ''}</td>
-              <td>
-                <button class="btn btn-sm btn-outline-danger"
-                        onclick="deleteRow('${row._id}','${row.client}','${row.code}')">刪除</button>
-              </td>
-            `;
-            tbody.appendChild(tr);
-          });
-        }
+      // 客戶列表
+      if (!groups.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">目前沒有符合條件的客戶</td></tr>';
+        return;
       }
 
-      if (viewMode === 'client') {
-        if (!data.length) {
-          clientContainer.innerHTML = '<div class="text-center text-muted">目前沒有符合條件的資料</div>';
-        } else {
-          const groups = {};
-          data.forEach(r => {
-            const key = r.client || '未命名客戶';
-            if (!groups[key]) {
-              groups[key] = { items: [], cost: 0, value: 0 };
-            }
-            const qty  = Number(r.quantity) || 0;
-            const cost = Number(r.cost) || 0;
-            const cur  = Number(r.currentPrice ?? r.cost) || 0;
+      tbody.innerHTML = '';
+      groups.forEach(g => {
+        const pnl = g.totalValue - g.totalCost;
+        const rate = g.totalCost > 0 ? pnl / g.totalCost * 100 : 0;
+        const pnlClass = pnl >= 0 ? 'text-up' : 'text-down';
+        const rateStr = g.totalCost > 0
+          ? (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%'
+          : '-';
 
-            groups[key].items.push(r);
-            groups[key].cost  += qty * cost;
-            groups[key].value += qty * cur;
-          });
+        const recTag = g.hasRecommend ? '<span class="badge bg-primary">有推薦飆股</span>' : '';
 
-          clientContainer.innerHTML = '';
-          Object.keys(groups).sort().forEach(name => {
-            const g = groups[name];
-            const pnl  = g.value - g.cost;
-            const rate = g.cost > 0 ? pnl / g.cost * 100 : 0;
-            const rateStr = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
-            const pnlClass = pnl >= 0 ? 'text-up' : 'text-down';
+        // 列出前 3 檔股票做摘要
+        const briefStocks = g.holdings
+          .slice(0, 3)
+          .map(h => `${h.stockName || ''}(${h.code || ''})`)
+          .join('、');
 
-            const card = document.createElement('div');
-            card.className = 'client-group-card';
-            card.innerHTML = `
-              <div class="client-group-header">
-                <div>
-                  <strong>${name}</strong>
-                  <span class="ms-2 text-muted">共 ${g.items.length} 檔</span>
-                </div>
-                <div class="${pnlClass} fw-semibold">
-                  ${pnl >= 0 ? '+' : ''}${pnl.toFixed(0)} (${rateStr})
-                </div>
-              </div>
-              <div class="client-group-body">
-                <div class="table-responsive">
-                  <table class="table table-sm mb-0 align-middle">
-                    <thead>
-                      <tr>
-                        <th>股票</th>
-                        <th>代碼</th>
-                        <th class="text-end">數量</th>
-                        <th class="text-end">成本</th>
-                        <th class="text-end">即時價</th>
-                        <th class="text-end">估算市值</th>
-                        <th class="text-end">盈虧</th>
-                        <th>類型</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${g.items.map(r => {
-                        const qty  = Number(r.quantity) || 0;
-                        const cost = Number(r.cost) || 0;
-                        const cur  = Number(r.currentPrice ?? r.cost) || 0;
-                        const value = qty * cur;
-                        const pnlItem = qty * (cur - cost);
-                        const rateItem = cost > 0 ? (cur - cost) / cost * 100 : 0;
-                        const badgeClass = pnlItem >= 0 ? 'badge-up' : 'badge-down';
-                        const rateItemStr = (rateItem>=0?'+':'') + rateItem.toFixed(1) + '%';
-                        return `
-                          <tr>
-                            <td>${r.stockName || ''}</td>
-                            <td>${r.code || ''}</td>
-                            <td class="text-end">${qty.toLocaleString('zh-TW')}</td>
-                            <td class="text-end">${cost || ''}</td>
-                            <td class="text-end">${cur || ''}</td>
-                            <td class="text-end">${value ? value.toLocaleString('zh-TW',{maximumFractionDigits:0}) : ''}</td>
-                            <td class="text-end">
-                              ${pnlItem
-                                ? `<span class="badge ${badgeClass}">${(pnlItem>=0?'+':'')+pnlItem.toFixed(0)} (${rateItemStr})</span>`
-                                : ''}
-                            </td>
-                            <td>${r.recommendType === 'yes'
-                                  ? '<span class="badge bg-primary">推薦</span>'
-                                  : '<span class="badge bg-secondary">一般</span>'}</td>
-                          </tr>
-                        `;
-                      }).join('')}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            `;
-            clientContainer.appendChild(card);
-          });
-        }
-      }
+        const moreCount = g.holdings.length > 3 ? ` 等 ${g.holdings.length} 檔` : '';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <span class="client-link" onclick="showClientDetail('${g.client.replace(/'/g,"&#39;")}')">
+              ${g.client}
+            </span>
+          </td>
+          <td>
+            ${briefStocks || '—'}${moreCount}
+          </td>
+          <td class="text-end">${g.holdings.length}</td>
+          <td class="text-end">${g.totalQty.toLocaleString('zh-TW')}</td>
+          <td class="text-end">${g.totalValue.toLocaleString('zh-TW',{maximumFractionDigits:0})}</td>
+          <td class="text-end ${pnlClass}">
+            ${(pnl >= 0 ? '+' : '') + pnl.toFixed(0)}
+          </td>
+          <td class="text-end ${pnlClass}">
+            ${rateStr}
+          </td>
+          <td>
+            ${recTag}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
-    function showClientDetail(row) {
+    // ---------------- 客戶詳細 Modal ----------------
+    function showClientDetail(clientName) {
       const body = document.getElementById('clientDetailBody');
+      const clientGroup = groupByClient.find(g => g.client === clientName);
+      if (!clientGroup) return;
 
-      const qty  = Number(row.quantity) || 0;
-      const cost = Number(row.cost) || 0;
-      const cur  = Number(row.currentPrice ?? row.cost) || 0;
-      const value = qty * cur;
-      const pnl   = qty * (cur - cost);
-      const rate  = cost > 0 ? (cur - cost) / cost * 100 : 0;
+      // 合併客戶檔案（所有持倉的 clientProfile）
+      const sameRows = clientGroup.holdings.filter(r => r.clientProfile);
+      const mergedProfile = sameRows.reduce((acc, r) => {
+        const p = r.clientProfile || {};
+        return {
+          gender:     acc.gender     || p.gender     || '',
+          age:        acc.age        || p.age        || '',
+          experience: acc.experience || p.experience || '',
+          style:      acc.style      || p.style      || '',
+          hobbies:    acc.hobbies    || p.hobbies    || '',
+          family:     acc.family     || p.family     || '',
+          note:       acc.note       || p.note       || ''
+        };
+      }, {});
 
-      const p = row.clientProfile || {};
+      const p = mergedProfile;
 
-      let html = `
+      const profileHtml = `
         <div class="mb-3">
-          <h6>客戶檔案</h6>
+          <h6 class="mb-2">客戶檔案</h6>
           <table class="table table-sm">
             <tbody>
-              <tr><th style="width:130px;">客戶姓名</th><td>${row.client || ''}</td></tr>
+              <tr><th style="width:130px;">客戶姓名</th><td>${clientGroup.client || ''}</td></tr>
               <tr><th>性別</th><td>${p.gender || '未填寫'}</td></tr>
               <tr><th>年齡(歲)</th><td>${p.age || '未填寫'}</td></tr>
               <tr><th>股齡</th><td>${p.experience || '未填寫'}</td></tr>
@@ -914,70 +772,77 @@
             </tbody>
           </table>
         </div>
+      `;
 
-        <div class="mb-3">
-          <h6>股票資訊</h6>
-          <table class="table table-sm">
-            <tbody>
-              <tr><th style="width:130px;">股票名稱</th><td>${row.stockName || ''}</td></tr>
-              <tr><th>股票代碼</th><td>${row.code || ''}</td></tr>
-              <tr><th>是否推薦</th><td>${row.recommendType === 'yes' ? '推薦飆股' : '一般'}</td></tr>
-              <tr><th>提交時間</th><td>${row.createdAt ? new Date(row.createdAt).toLocaleString() : ''}</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mb-1">
-          <h6>持倉與損益</h6>
-          <table class="table table-sm">
-            <tbody>
-              <tr><th style="width:130px;">持股數量</th><td>${qty.toLocaleString('zh-TW')}</td></tr>
-              <tr><th>買入成本</th><td>${cost}</td></tr>
-              <tr><th>即時股價</th><td>${cur}</td></tr>
-              <tr><th>估算市值</th><td>${value ? value.toLocaleString('zh-TW',{maximumFractionDigits:0}) : ''}</td></tr>
-              <tr><th>估算盈虧</th><td>${pnl ? ((pnl>=0?'+':'') + pnl.toFixed(0)) : '0'}</td></tr>
-              <tr><th>報酬率</th><td>${cost>0 ? ((rate>=0?'+':'') + rate.toFixed(2) + '%') : '-'}</td></tr>
-            </tbody>
-          </table>
+      const holdingsHtml = `
+        <div class="mb-2">
+          <h6 class="mb-2">持倉明細（共 ${clientGroup.holdings.length} 檔）</h6>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>股票名稱</th>
+                  <th>代碼</th>
+                  <th class="text-end">數量</th>
+                  <th class="text-end">成本</th>
+                  <th class="text-end">即時價</th>
+                  <th class="text-end">市值</th>
+                  <th class="text-end">盈虧</th>
+                  <th>類型</th>
+                  <th>提交時間</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${clientGroup.holdings.map(r => {
+                  const qty  = Number(r.quantity) || 0;
+                  const cost = Number(r.cost) || 0;
+                  const cur  = Number(r.currentPrice ?? r.cost) || 0;
+                  const value = qty * cur;
+                  const pnl   = qty * (cur - cost);
+                  const rate  = cost > 0 ? (cur - cost) / cost * 100 : 0;
+                  const badgeClass = pnl >= 0 ? 'badge-up' : 'badge-down';
+                  const rateStr = cost > 0 ? ((rate>=0?'+':'')+rate.toFixed(2)+'%') : '-';
+                  return `
+                    <tr>
+                      <td>${r.stockName || ''}</td>
+                      <td>${r.code || ''}</td>
+                      <td class="text-end">${qty.toLocaleString('zh-TW')}</td>
+                      <td class="text-end">${cost || ''}</td>
+                      <td class="text-end">${cur || ''}</td>
+                      <td class="text-end">${value ? value.toLocaleString('zh-TW',{maximumFractionDigits:0}) : ''}</td>
+                      <td class="text-end">
+                        ${pnl
+                          ? `<span class="badge ${badgeClass}">${(pnl>=0?'+':'')+pnl.toFixed(0)} (${rateStr})</span>`
+                          : ''}
+                      </td>
+                      <td>${r.recommendType === 'yes'
+                            ? '<span class="badge bg-primary">推薦</span>'
+                            : '<span class="badge bg-secondary">一般</span>'}</td>
+                      <td>${r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       `;
 
-      body.innerHTML = html;
+      body.innerHTML = profileHtml + holdingsHtml;
 
       const modal = new bootstrap.Modal(document.getElementById('clientDetailModal'));
       modal.show();
     }
 
-    async function deleteRow(id, client, code) {
-      if (!confirm(`確定要刪除 ${client || ''} / ${code || ''} 這筆持倉嗎？`)) return;
-
-      try {
-        await fetch(`${API_BASE}/delete_position`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: 'admin_view',
-            client,
-            code
-          })
-        });
-      } catch (e) {
-        console.warn('刪除 API 呼叫失敗（前端仍移除）', e);
-      }
-
-      allData = allData.filter(row => row._id !== id);
-      render();
-    }
-
+    // ---------------- 匯出 CSV（仍以每筆持倉為單位） ----------------
     function exportCSV() {
-      const data = getFilteredAndSortedData();
-      if (!data.length) {
+      if (!allHoldings.length) {
         alert('目前沒有可匯出的資料');
         return;
       }
 
       let csv = '客戶姓名,股票名稱,代碼,持股數,買入價,即時價,估算市值,估算盈虧,是否推薦,提交時間\n';
-      data.forEach(row => {
+      allHoldings.forEach(row => {
         const qty  = Number(row.quantity) || 0;
         const cost = Number(row.cost) || 0;
         const cur  = Number(row.currentPrice ?? row.cost) || 0;
@@ -1002,7 +867,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = '持倉總表.csv';
+      a.download = '客戶持倉明細.csv';
       a.click();
       URL.revokeObjectURL(url);
     }

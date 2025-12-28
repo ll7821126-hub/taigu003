@@ -37,7 +37,7 @@ const holdingSchema = new mongoose.Schema({
   takeProfit: Number,
   recommendType: { type: String, default: 'no' },
 
-  // ⭐ 新增：客戶檔案（和前端 profile 欄位對應）
+  // ⭐ 客戶檔案（和前端 profile 欄位對應）
   clientProfile: {
     gender: String,
     age: String,
@@ -168,7 +168,7 @@ app.post('/api/save_data', async (req, res) => {
       stopLoss,
       takeProfit,
       recommendType,
-      clientProfile           // ⭐ 新增
+      clientProfile          // ⭐ 新增／接收客戶檔案
     } = req.body || {};
 
     const holding = new Holding({
@@ -181,7 +181,7 @@ app.post('/api/save_data', async (req, res) => {
       stopLoss,
       takeProfit,
       recommendType,
-      clientProfile
+      clientProfile          // ⭐ 寫進 MongoDB
     });
 
     await holding.save();
@@ -208,7 +208,7 @@ app.post('/api/update_position', async (req, res) => {
       stopLoss,
       takeProfit,
       recommendType,
-      clientProfile           // ⭐ 新增
+      clientProfile          // ⭐ 同樣接收
     } = req.body || {};
 
     if (!userId || !client || !code) {
@@ -224,19 +224,22 @@ app.post('/api/update_position', async (req, res) => {
       stopLoss,
       takeProfit,
       recommendType,
-      clientProfile
+      clientProfile          // ⭐ 更新時也一併寫入
     };
 
+    // 移除 undefined 欄位，避免覆蓋成 undefined
     Object.keys(updateFields).forEach((k) => {
       if (updateFields[k] === undefined) delete updateFields[k];
     });
 
+    // 先嘗試更新既有持倉
     const updated = await Holding.findOneAndUpdate(
       { userId, client, code },
       { $set: updateFields },
       { new: true }
     );
 
+    // 如果找不到就新增一筆
     if (!updated) {
       const holding = new Holding({
         userId,
