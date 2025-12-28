@@ -14,7 +14,6 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // ---------------------- 靜態檔案 ------------------------
-// 讓 /public 裡面的檔案可以直接被訪問，例如 /admin.html
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ---------------------- MongoDB 連線 --------------------
@@ -37,6 +36,18 @@ const holdingSchema = new mongoose.Schema({
   stopLoss: Number,
   takeProfit: Number,
   recommendType: { type: String, default: 'no' },
+
+  // ⭐ 新增：客戶檔案（和前端 profile 欄位對應）
+  clientProfile: {
+    gender: String,
+    age: String,
+    experience: String,
+    style: String,
+    hobbies: String,
+    family: String,
+    note: String
+  },
+
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -67,7 +78,7 @@ app.post('/api/admin/login', async (req, res) => {
 });
 
 // ======================================================
-// 共用：向 Yahoo 抓即時價格（若失敗則回傳 null）
+// 共用：向 Yahoo 抓即時價格
 // ======================================================
 async function getRealStockPrice(code) {
   if (!yahooFinance) return null;
@@ -76,7 +87,6 @@ async function getRealStockPrice(code) {
   try {
     let symbol = code.trim();
 
-    // 如果是純數字，就當作台股，加上 .TW
     if (/^\d+$/.test(symbol)) {
       symbol = symbol + '.TW';
     }
@@ -102,8 +112,6 @@ async function getRealStockPrice(code) {
 
 // ======================================================
 // 0.5 取得多檔股票即時價格  POST /api/prices
-// body: { codes: ["2330", "2317.TW", ...] }
-// 回傳: { "2330": 798.0, "2317": 202.5, ... }
 // ======================================================
 app.post('/api/prices', async (req, res) => {
   try {
@@ -114,7 +122,6 @@ app.post('/api/prices', async (req, res) => {
 
     const result = {};
 
-    // 依序查詢，避免一次打太多被 Yahoo 限流
     for (const raw of codes) {
       if (!raw) continue;
       const code = String(raw);
@@ -160,7 +167,8 @@ app.post('/api/save_data', async (req, res) => {
       cost,
       stopLoss,
       takeProfit,
-      recommendType
+      recommendType,
+      clientProfile           // ⭐ 新增
     } = req.body || {};
 
     const holding = new Holding({
@@ -172,7 +180,8 @@ app.post('/api/save_data', async (req, res) => {
       cost,
       stopLoss,
       takeProfit,
-      recommendType
+      recommendType,
+      clientProfile
     });
 
     await holding.save();
@@ -186,7 +195,6 @@ app.post('/api/save_data', async (req, res) => {
 
 // ======================================================
 // 2.5 更新 / 合併持倉 POST /api/update_position
-// 用 userId + client + code 找到那筆，更新 quantity / cost 等
 // ======================================================
 app.post('/api/update_position', async (req, res) => {
   try {
@@ -199,7 +207,8 @@ app.post('/api/update_position', async (req, res) => {
       cost,
       stopLoss,
       takeProfit,
-      recommendType
+      recommendType,
+      clientProfile           // ⭐ 新增
     } = req.body || {};
 
     if (!userId || !client || !code) {
@@ -214,10 +223,10 @@ app.post('/api/update_position', async (req, res) => {
       cost,
       stopLoss,
       takeProfit,
-      recommendType
+      recommendType,
+      clientProfile
     };
 
-    // 移除 undefined 欄位，避免覆蓋舊值
     Object.keys(updateFields).forEach((k) => {
       if (updateFields[k] === undefined) delete updateFields[k];
     });
@@ -228,7 +237,6 @@ app.post('/api/update_position', async (req, res) => {
       { new: true }
     );
 
-    // 若找不到就補一筆（避免前端只打 update 的情況）
     if (!updated) {
       const holding = new Holding({
         userId,
@@ -239,7 +247,8 @@ app.post('/api/update_position', async (req, res) => {
         cost,
         stopLoss,
         takeProfit,
-        recommendType
+        recommendType,
+        clientProfile
       });
       await holding.save();
     }
@@ -253,7 +262,6 @@ app.post('/api/update_position', async (req, res) => {
 
 // ======================================================
 // 2.6 刪除持倉 POST /api/delete_position
-// body: { userId, client, code }
 // ======================================================
 app.post('/api/delete_position', async (req, res) => {
   try {
@@ -273,7 +281,7 @@ app.post('/api/delete_position', async (req, res) => {
 });
 
 // ======================================================
-// 健康檢查 (方便測試 Render 是否活著)
+// 健康檢查
 // ======================================================
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

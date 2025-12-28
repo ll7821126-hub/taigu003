@@ -10,87 +10,292 @@
 
   <style>
     body {
-      background-color: #f4f6f9;
+      background-color: #0f172a;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #111827;
     }
     .login-card {
       max-width: 400px;
-      margin: 100px auto;
+      margin: 120px auto;
       padding: 30px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      background: #020617;
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(15,23,42,0.8);
+      border: 1px solid rgba(148,163,184,0.4);
+      color:#e5e7eb;
     }
-    .dashboard { display: none; padding: 20px; }
+    .login-card h3 {font-weight:800;}
+    .login-card .form-label{font-size:13px;color:#9ca3af;}
+    .login-card .form-control{
+      background:#020617;
+      border-radius:999px;
+      border:1px solid #1f2937;
+      color:#e5e7eb;
+      font-size:14px;
+    }
+    .login-card .form-control:focus{
+      border-color:#22c55e;
+      box-shadow:0 0 0 1px rgba(34,197,94,.6);
+      background:#020617;
+      color:#e5e7eb;
+    }
+    .login-card .btn-primary{
+      border-radius:999px;
+      background:linear-gradient(135deg,#22c55e,#4ade80);
+      border:none;
+      font-weight:700;
+      box-shadow:0 10px 30px rgba(34,197,94,.45);
+    }
+    .login-card .btn-primary:hover{
+      filter:brightness(1.05);
+      transform:translateY(-1px);
+    }
+
+    .dashboard { display: none; padding: 18px; }
 
     .page-header {
-      padding: 12px 24px;
-      margin-bottom: 16px;
-      border-radius: 10px;
-      background: #ffffff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      padding: 16px 22px;
+      margin-bottom: 14px;
+      border-radius: 18px;
+      background: radial-gradient(circle at top left,#1f2937,#020617 60%);
+      box-shadow: 0 20px 35px rgba(15,23,42,0.7);
+      border: 1px solid rgba(148,163,184,0.45);
+      color:#e5e7eb;
     }
+    .page-title {
+      font-size:20px;
+      font-weight:800;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .page-subtitle {
+      font-size:12px;
+      color:#9ca3af;
+    }
+    .pill {
+      padding:4px 10px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.8);
+      border:1px solid rgba(148,163,184,0.4);
+      font-size:11px;
+      color:#e5e7eb;
+    }
+    .header-right .btn {
+      border-radius:999px;
+      font-size:12px;
+      padding:6px 14px;
+    }
+    .btn-icon{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
     .stat-card {
-      background: #ffffff;
-      border-radius: 10px;
-      padding: 16px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-      border: 1px solid #e5e7eb;
+      background: linear-gradient(135deg, #020617, #020617);
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 12px 22px rgba(15,23,42,0.7);
+      border: 1px solid rgba(148,163,184,0.35);
+      color:#e5e7eb;
     }
-    .stat-title { font-size: 13px; color: #6b7280; }
-    .stat-value { font-size: 20px; font-weight: 700; }
+    .stat-title { font-size:12px; color:#9ca3af; }
+    .stat-value { font-size:20px; font-weight:800; }
 
     .badge-up { background:#fee2e2; color:#b91c1c; }
     .badge-down { background:#d1fae5; color:#065f46; }
-    .text-up { color:#b91c1c; }
-    .text-down { color:#059669; }
+    .text-up { color:#fecaca; }
+    .text-down { color:#6ee7b7; }
 
     .tab-pill.nav-pills .nav-link {
       border-radius: 999px;
-      padding: 6px 14px;
-      font-size: 13px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color:#9ca3af;
+      border:1px solid transparent;
+    }
+    .tab-pill.nav-pills .nav-link:hover{
+      border-color:rgba(148,163,184,0.5);
     }
     .tab-pill.nav-pills .nav-link.active {
-      background: #111827;
+      background: linear-gradient(135deg,#22c55e,#16a34a);
+      color:#ecfdf5;
+      border:none;
     }
 
-    .search-input { max-width: 220px; }
+    .search-input { max-width: 260px; }
+
+    .card-main {
+      background: #020617;
+      border-radius:18px;
+      box-shadow:0 18px 30px rgba(15,23,42,0.9);
+      border:1px solid rgba(148,163,184,0.4);
+    }
 
     .client-group-card {
-      border-radius: 10px;
-      border: 1px solid #e5e7eb;
-      background:#fff;
-      margin-bottom: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.35);
+      background: radial-gradient(circle at top left,#020617,#020617 65%);
+      margin-bottom: 10px;
+      color:#e5e7eb;
     }
     .client-group-header {
-      padding: 10px 14px;
-      border-bottom: 1px solid #e5e7eb;
-      background:#f9fafb;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(148,163,184,0.35);
+      background: radial-gradient(circle at top left,#111827,#020617 70%);
       display:flex;
       justify-content:space-between;
       align-items:center;
-      font-size: 14px;
+      font-size: 13px;
     }
-    .client-group-body { padding: 8px 12px; }
-    .view-toggle .btn { font-size: 13px; }
+    .client-group-body { padding: 8px 10px; }
+    .view-toggle .btn {
+      font-size: 12px;
+      border-radius:999px;
+    }
 
-    /* 讓「客戶姓名」看起來可點擊 */
     .client-link {
       cursor: pointer;
-      color: #2563eb;
+      color: #38bdf8;
       text-decoration: underline;
+      font-weight:600;
     }
     .client-link:hover {
-      color: #1d4ed8;
+      color: #0ea5e9;
     }
+
+    .table-dark {
+      background:linear-gradient(90deg,#020617,#020617);
+      color:#9ca3af;
+      border-bottom:1px solid rgba(148,163,184,0.4);
+    }
+    .table-dark th{
+      border-bottom-color:rgba(148,163,184,0.4)!important;
+      font-size:11px;
+      letter-spacing:0.03em;
+    }
+    .table-hover tbody tr:hover{
+      background-color:rgba(15,23,42,0.85);
+    }
+    .table-striped>tbody>tr:nth-of-type(odd)>*{
+      background-color:#020617;
+    }
+    .table-striped>tbody>tr:nth-of-type(even)>*{
+      background-color:#020617;
+    }
+    tbody td{
+      border-bottom:1px solid rgba(31,41,55,0.8)!important;
+      color:#e5e7eb;
+      font-size:12px;
+    }
+
+    .side-summary .stat-card{
+      background:radial-gradient(circle at top left,#020617,#020617 70%);
+    }
+
+    .form-select, .form-control{
+      background:#020617;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.5);
+      color:#e5e7eb;
+      font-size:12px;
+    }
+    .form-select:focus, .form-control:focus{
+      background:#020617;
+      color:#e5e7eb;
+      border-color:#22c55e;
+      box-shadow:0 0 0 1px rgba(34,197,94,.6);
+    }
+    .form-check-input{
+      cursor:pointer;
+    }
+
+    .toolbar-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+      gap:10px;
+    }
+    .toolbar-left{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .toolbar-right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .mini-label{
+      font-size:11px;
+      color:#9ca3af;
+      margin-right:4px;
+    }
+
+    .modal-content{
+      background:#020617;
+      color:#e5e7eb;
+      border-radius:18px;
+      border:1px solid rgba(148,163,184,0.6);
+    }
+    .modal-header{
+      border-bottom-color:rgba(31,41,55,0.9);
+    }
+    .modal-footer{
+      border-top-color:rgba(31,41,55,0.9);
+    }
+    .modal-title{font-weight:800;}
+
+    .badge.bg-primary{
+      background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
+    }
+    .badge.bg-secondary{
+      background:#4b5563!important;
+    }
+
+    .btn-outline-secondary.btn-sm,
+    .btn-success.btn-sm,
+    .btn-outline-danger.btn-sm{
+      border-radius:999px;
+      font-size:11px;
+      padding:5px 12px;
+    }
+    .btn-outline-secondary.btn-sm{
+      border-color:#4b5563;
+      color:#e5e7eb;
+      background:#020617;
+    }
+    .btn-outline-secondary.btn-sm:hover{
+      background:#111827;
+    }
+    .btn-success.btn-sm{
+      background:linear-gradient(135deg,#22c55e,#16a34a);
+      border:none;
+    }
+    .btn-success.btn-sm:hover{
+      filter:brightness(1.05);
+    }
+    .btn-outline-danger.btn-sm{
+      border-color:#ef4444;
+      color:#fecaca;
+      background:#020617;
+    }
+    .btn-outline-danger.btn-sm:hover{
+      background:#7f1d1d;
+    }
+
+    .small-muted{font-size:11px;color:#9ca3af;}
   </style>
 </head>
 <body>
 
-  <!-- 1. 登錄介面 -->
+  <!-- 登錄介面 -->
   <div id="loginSection" class="container">
     <div class="login-card">
-      <h3 class="text-center mb-4">管理員登錄</h3>
+      <h3 class="text-center mb-4">後台管理登入</h3>
 
       <div class="mb-3">
         <label class="form-label">帳號</label>
@@ -102,53 +307,45 @@
         <input type="password" id="password" placeholder="請輸入密碼" class="form-control">
       </div>
 
-      <button onclick="handleLogin()" class="btn btn-primary w-100">登錄系統</button>
-      <p id="loginError" class="text-danger mt-2 text-center" style="display:none;">帳號或密碼錯誤</p>
+      <button onclick="handleLogin()" class="btn btn-primary w-100 mt-2">登入系統</button>
+      <p id="loginError" class="text-danger mt-3 text-center" style="display:none;">帳號或密碼錯誤</p>
     </div>
   </div>
 
-  <!-- 2. 儀表板 -->
+  <!-- 儀表板 -->
   <div id="dashboardSection" class="dashboard container-fluid">
     <!-- 頂部條 -->
-    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
       <div>
-        <h4 class="mb-1">📊 用戶持倉數據總覽</h4>
-        <small class="text-muted" id="lastFetchTime"></small>
+        <div class="page-title">
+          客戶持倉監控面板
+          <span class="pill">Admin Console</span>
+        </div>
+        <div class="page-subtitle">
+          即時檢視所有客戶的持股、收益與風險狀態
+        </div>
+        <div id="lastFetchTime" class="small-muted mt-1"></div>
       </div>
-      <div class="d-flex align-items-center gap-2 flex-wrap">
 
-        <!-- 搜尋 -->
-        <input type="text" id="searchInput" class="form-control form-control-sm search-input"
-               placeholder="搜尋股票名稱 / 代碼">
-
-        <!-- 排序欄位 -->
-        <select id="sortSelect" class="form-select form-select-sm" style="width:auto; min-width:160px;">
-          <option value="time_desc">按提交時間（新 → 舊）</option>
-          <option value="value_desc">按估算市值（大 → 小）</option>
-          <option value="value_asc">按估算市值（小 → 大）</option>
-        </select>
-
-        <div class="btn-group btn-group-sm view-toggle" role="group" aria-label="View toggle">
-          <button type="button" class="btn btn-outline-secondary active" id="btnViewTable"
-                  onclick="setViewMode('table')">表格視圖</button>
-          <button type="button" class="btn btn-outline-secondary" id="btnViewClient"
-                  onclick="setViewMode('client')">依客戶分組</button>
-        </div>
-
-        <!-- 自動刷新 -->
-        <div class="form-check form-switch ms-1">
+      <div class="header-right d-flex align-items-center gap-2 flex-wrap">
+        <div class="form-check form-switch text-nowrap">
           <input class="form-check-input" type="checkbox" id="autoRefreshSwitch">
-          <label class="form-check-label small" for="autoRefreshSwitch">自動刷新(10秒)</label>
+          <label class="form-check-label small text-light" for="autoRefreshSwitch">自動刷新 (10 秒)</label>
         </div>
-
-        <button onclick="exportCSV()" class="btn btn-outline-secondary btn-sm">📥 匯出 CSV</button>
-        <button onclick="fetchData()" class="btn btn-success btn-sm">🔄 刷新數據</button>
-        <button onclick="logout()" class="btn btn-outline-danger btn-sm">退出登錄</button>
+        <button onclick="exportCSV()" class="btn btn-outline-secondary btn-sm btn-icon">
+          <span>📥 匯出 CSV</span>
+        </button>
+        <button onclick="fetchData()" class="btn btn-success btn-sm btn-icon">
+          <span>🔄 立即刷新</span>
+        </button>
+        <button onclick="logout()" class="btn btn-outline-danger btn-sm btn-icon">
+          <span>登出</span>
+        </button>
       </div>
     </div>
 
     <!-- 整體統計 -->
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-3 side-summary">
       <div class="col-6 col-md-3">
         <div class="stat-card">
           <div class="stat-title">總持倉筆數</div>
@@ -175,7 +372,7 @@
       </div>
     </div>
 
-    <!-- tab：推薦 / 非推薦 -->
+    <!-- tab -->
     <ul class="nav nav-pills mb-2 tab-pill" id="typeTab" role="tablist">
       <li class="nav-item" role="presentation">
         <button class="nav-link active" id="tabAll" data-bs-toggle="pill" type="button"
@@ -187,20 +384,49 @@
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="tabNormal" data-bs-toggle="pill" type="button"
-                onclick="setFilterType('normal')">非推薦</button>
+                onclick="setFilterType('normal')">一般持股</button>
       </li>
     </ul>
 
     <!-- 主內容 -->
     <div class="row">
-      <!-- 左：表格 / 客戶視圖 -->
       <div class="col-lg-9 mb-3">
-        <div class="card">
+        <div class="card card-main">
           <div class="card-body">
+
+            <!-- 工具列：搜尋 + 排序 (已移到表格上方) -->
+            <div class="toolbar-row">
+              <div class="toolbar-left">
+                <span class="mini-label">篩選</span>
+                <input type="text" id="searchInput"
+                       class="form-control form-control-sm search-input"
+                       placeholder="搜尋股票名稱 / 代碼">
+              </div>
+              <div class="toolbar-right">
+                <span class="mini-label">排序</span>
+                <select id="sortSelect" class="form-select form-select-sm" style="min-width: 190px;">
+                  <option value="time_desc">按提交時間（新 → 舊）</option>
+                  <option value="value_desc">按估算市值（大 → 小）</option>
+                  <option value="value_asc">按估算市值（小 → 大）</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 視圖切換 -->
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="small-muted">左方為全部持倉列表，可點客戶姓名查看客戶檔案與損益細節。</div>
+              <div class="btn-group btn-group-sm view-toggle" role="group" aria-label="View toggle">
+                <button type="button" class="btn btn-outline-secondary active" id="btnViewTable"
+                        onclick="setViewMode('table')">表格視圖</button>
+                <button type="button" class="btn btn-outline-secondary" id="btnViewClient"
+                        onclick="setViewMode('client')">依客戶分組</button>
+              </div>
+            </div>
+
             <!-- 表格視圖 -->
             <div id="tableView">
               <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle">
+                <table class="table table-hover table-striped align-middle mb-0">
                   <thead class="table-dark">
                     <tr>
                       <th>客戶姓名</th>
@@ -229,10 +455,10 @@
         </div>
       </div>
 
-      <!-- 右：總覽 -->
+      <!-- 右側總覽 -->
       <div class="col-lg-3 mb-3">
         <div class="stat-card mb-3">
-          <h6 class="mb-2">⚖️ 整體盈虧概況</h6>
+          <h6 class="mb-2"⚖️ 整體盈虧概況</h6>
           <div class="d-flex flex-column gap-1">
             <div class="d-flex justify-content-between">
               <span class="stat-title">估算總市值</span>
@@ -250,18 +476,18 @@
         </div>
 
         <div class="stat-card">
-          <h6 class="mb-2">💡 小提示</h6>
-          <small class="text-muted">
-            ‧ 點「客戶姓名」可查看完整錄入資訊<br>
-            ‧ 排序欄可按估算市值大小排列<br>
-            ‧ 勾選「自動刷新」每 10 秒更新股價與收益率
+          <h6 class="mb-2">💡 操作提示</h6>
+          <small class="text-muted small-muted">
+            ‧ 點「客戶姓名」可查看完整客戶檔案與持倉資料<br>
+            ‧ 排序選單可按估算市值或時間排序股票列表<br>
+            ‧ 開啟自動刷新後，系統每 10 秒更新即時股價與統計數字
           </small>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 3. 客戶詳細資訊彈窗 -->
+  <!-- 客戶詳細資訊彈窗 -->
   <div class="modal fade" id="clientDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg">
       <div class="modal-content">
@@ -270,7 +496,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
         </div>
         <div class="modal-body">
-          <div id="clientDetailBody"><!-- JS 動態填入 --></div>
+          <div id="clientDetailBody"></div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
@@ -285,19 +511,17 @@
   <script>
     const API_BASE = '/api';
 
-    let allData = [];          // 持倉 + 現價
-    let viewMode = 'table';    // 'table' or 'client'
-    let filterType = 'all';    // 'all' | 'rec' | 'normal'
-    let searchText = '';       // 搜尋文字
+    let allData = [];
+    let viewMode = 'table';
+    let filterType = 'all';
+    let searchText = '';
     let autoRefreshTimer = null;
-    let sortMode = 'time_desc'; // 排序模式
+    let sortMode = 'time_desc';
 
-    // 已登入則直接進入儀表板
     if (localStorage.getItem('adminToken')) {
       showDashboard();
     }
 
-    // 登入
     async function handleLogin() {
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value.trim();
@@ -345,7 +569,6 @@
       document.getElementById('loginSection').style.display = 'block';
     }
 
-    // 視圖模式
     function setViewMode(mode) {
       viewMode = mode;
       document.getElementById('tableView').style.display = mode === 'table' ? 'block' : 'none';
@@ -357,7 +580,6 @@
       render();
     }
 
-    // 推薦篩選
     function setFilterType(type) {
       filterType = type;
       document.getElementById('tabAll').classList.toggle('active', type === 'all');
@@ -366,23 +588,20 @@
       render();
     }
 
-    // 搜尋
     document.getElementById('searchInput').addEventListener('input', (e) => {
       searchText = e.target.value.trim().toLowerCase();
       render();
     });
 
-    // 排序變更
     document.getElementById('sortSelect').addEventListener('change', (e) => {
       sortMode = e.target.value;
       render();
     });
 
-    // 自動刷新開關
     document.getElementById('autoRefreshSwitch').addEventListener('change', (e) => {
       if (e.target.checked) {
-        fetchData();                          // 立刻抓一次
-        autoRefreshTimer = setInterval(fetchData, 10000); // 每 10 秒自動抓
+        fetchData();
+        autoRefreshTimer = setInterval(fetchData, 10000);
       } else {
         if (autoRefreshTimer) {
           clearInterval(autoRefreshTimer);
@@ -395,11 +614,10 @@
       if (autoRefreshTimer) clearInterval(autoRefreshTimer);
     });
 
-    // 抓資料 + 股價
     async function fetchData() {
       const tbody = document.getElementById('tableBody');
       const clientContainer = document.getElementById('clientGroupContainer');
-      tbody.innerHTML = '<tr><td colspan="11" class="text-center">載入中...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">載入中...</td></tr>';
       clientContainer.innerHTML = '<div class="text-center text-muted">載入中...</div>';
 
       try {
@@ -409,7 +627,6 @@
 
         let tempData = list;
 
-        // 取所有代碼去抓即時價
         const codes = [...new Set(tempData.map(r => r.code).filter(Boolean))];
 
         if (codes.length > 0) {
@@ -419,7 +636,7 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ codes })
             });
-            const priceMap = await priceRes.json();  // e.g. { '2330': 610, ... }
+            const priceMap = await priceRes.json();
 
             tempData = tempData.map(row => {
               const codeKey = String(row.code || '');
@@ -444,7 +661,6 @@
       }
     }
 
-    // 過濾 + 排序
     function getFilteredAndSortedData() {
       let data = allData.filter(row => {
         if (filterType === 'rec' && row.recommendType !== 'yes') return false;
@@ -473,7 +689,7 @@
           return valueB - valueA;
         } else if (sortMode === 'value_asc') {
           return valueA - valueB;
-        } else { // time_desc
+        } else {
           return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         }
       });
@@ -481,13 +697,11 @@
       return data;
     }
 
-    // 主渲染
     function render() {
       const data = getFilteredAndSortedData();
       const tbody = document.getElementById('tableBody');
       const clientContainer = document.getElementById('clientGroupContainer');
 
-      // ---- 統計 ----
       let totalCount = data.length;
       let totalQty = 0;
       let totalCostAmount = 0;
@@ -529,10 +743,9 @@
         rateEl.className = 'fw-semibold';
       }
 
-      // ---- 表格視圖 ----
       if (viewMode === 'table') {
         if (!data.length) {
-          tbody.innerHTML = '<tr><td colspan="11" class="text-center">目前沒有符合條件的資料</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted">目前沒有符合條件的資料</td></tr>';
         } else {
           tbody.innerHTML = '';
           data.forEach(row => {
@@ -579,7 +792,6 @@
         }
       }
 
-      // ---- 客戶分組視圖 ----
       if (viewMode === 'client') {
         if (!data.length) {
           clientContainer.innerHTML = '<div class="text-center text-muted">目前沒有符合條件的資料</div>';
@@ -674,7 +886,6 @@
       }
     }
 
-    // 顯示客戶詳情（彈窗）
     function showClientDetail(row) {
       const body = document.getElementById('clientDetailBody');
 
@@ -685,14 +896,21 @@
       const pnl   = qty * (cur - cost);
       const rate  = cost > 0 ? (cur - cost) / cost * 100 : 0;
 
+      const p = row.clientProfile || {};
+
       let html = `
         <div class="mb-3">
-          <h6>基本資料</h6>
+          <h6>客戶檔案</h6>
           <table class="table table-sm">
             <tbody>
               <tr><th style="width:130px;">客戶姓名</th><td>${row.client || ''}</td></tr>
-              <tr><th>聯絡電話</th><td>${row.phone || row.tel || row.contact || ''}</td></tr>
-              <tr><th>備註</th><td>${row.note || row.remark || ''}</td></tr>
+              <tr><th>性別</th><td>${p.gender || '未填寫'}</td></tr>
+              <tr><th>年齡(歲)</th><td>${p.age || '未填寫'}</td></tr>
+              <tr><th>股齡</th><td>${p.experience || '未填寫'}</td></tr>
+              <tr><th>操作方式</th><td>${p.style || '未填寫'}</td></tr>
+              <tr><th>興趣愛好</th><td>${p.hobbies || '未填寫'}</td></tr>
+              <tr><th>家庭情況</th><td>${p.family || '未填寫'}</td></tr>
+              <tr><th>備註</th><td>${p.note || '—'}</td></tr>
             </tbody>
           </table>
         </div>
@@ -709,7 +927,7 @@
           </table>
         </div>
 
-        <div class="mb-3">
+        <div class="mb-1">
           <h6>持倉與損益</h6>
           <table class="table table-sm">
             <tbody>
@@ -724,38 +942,12 @@
         </div>
       `;
 
-      // 其他欄位自動列出，避免漏掉表單自訂欄位
-      const knownKeys = new Set([
-        '_id','client','phone','tel','contact','note','remark',
-        'stockName','code','recommendType','createdAt',
-        'quantity','cost','currentPrice','userId','__v'
-      ]);
-
-      const extraEntries = Object.entries(row)
-        .filter(([k, v]) => !knownKeys.has(k) && v !== null && v !== undefined && v !== '');
-
-      if (extraEntries.length) {
-        html += `
-          <div class="mb-3">
-            <h6>其他欄位</h6>
-            <table class="table table-sm">
-              <tbody>
-                ${extraEntries.map(([k, v]) =>
-                  `<tr><th style="width:130px;">${k}</th><td>${String(v)}</td></tr>`
-                ).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }
-
       body.innerHTML = html;
 
       const modal = new bootstrap.Modal(document.getElementById('clientDetailModal'));
       modal.show();
     }
 
-    // 刪除
     async function deleteRow(id, client, code) {
       if (!confirm(`確定要刪除 ${client || ''} / ${code || ''} 這筆持倉嗎？`)) return;
 
@@ -777,7 +969,6 @@
       render();
     }
 
-    // 匯出 CSV
     function exportCSV() {
       const data = getFilteredAndSortedData();
       if (!data.length) {
